@@ -38,6 +38,8 @@ func CalculateCorporateTax(yearProfit float64, accountingPeriodStartDate time.Ti
 	// otherwise, necessary tax will be calculated proportionally against
 	// the government's tax year period date
 
+	// .... add last bit
+
 	return 0
 }
 
@@ -85,11 +87,12 @@ func getDaysForPeriods(accPeriodStartDate time.Time) (int, int) {
 
 	var daysPrev, daysNext int
 	if accPeriodStartDate.After(financialYearStartInThisYear) {
-		the31ofMarchNextYear := financialYearStartInThisYear.AddDate(1, 0, -1)
-		daysPrev = int(the31ofMarchNextYear.Sub(accPeriodStartDate).Hours() / 24)
+		finYearEnd := financialYearStartInThisYear.AddDate(1, 0, 0)
+		daysPrev = int(finYearEnd.Sub(accPeriodStartDate).Hours() / 24)
 
-		accPeriodEnd := accPeriodStartDate.AddDate(1, 0, 1 /* ???? why? */)
+		accPeriodEnd := accPeriodStartDate.AddDate(1, 0, 0)
 		daysNext = int(accPeriodEnd.Sub(financialYearStartInThisYear.AddDate(1, 0, 0)).Hours() / 24)
+
 	} else {
 		daysPrev = int(financialYearStartInThisYear.Sub(accPeriodStartDate).Hours() / 24)
 		daysNext = int(accPeriodStartDate.AddDate(1, 0, 0).Sub(financialYearStartInThisYear).Hours() / 24)

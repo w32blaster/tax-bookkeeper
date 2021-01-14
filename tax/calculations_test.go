@@ -103,10 +103,12 @@ func Test_getDaysForPeriods(t *testing.T) {
 	}{
 
 		// after 1st April
-		{dateOf("20-11-2019"), 132, 234},
+		{dateOf("20-11-2019"), 133, 233},
+		{dateOf("05-04-2019"), 362, 4},
 
 		// before 1st April
 		{dateOf("01-01-2017"), 90, 275},
+		{dateOf("20-02-2018"), 40, 325},
 	}
 
 	for _, tt := range tests {
