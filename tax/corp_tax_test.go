@@ -29,6 +29,9 @@ func Test_calculateCorporateTax(t *testing.T) {
 			40000.00, dateOf("30-12-2019"), 7600.00},
 		{"accounting date matches financial year 20%",
 			60000.00, dateOf("01-09-2015"), 12000.00},
+
+		{"PROVERIT ETO VRUSHNUJU",
+			60000.00, dateOf("01-11-2016"), 11648.22},
 	}
 
 	for _, tt := range tests {
@@ -120,6 +123,41 @@ func Test_getDaysForPeriods(t *testing.T) {
 			// Then:
 			assert.Equal(t, tt.daysPrev, daysPrev)
 			assert.Equal(t, tt.daysNext, daysNext)
+		})
+	}
+}
+
+func Test_calculateTwoPeriodsDifferentRate(t *testing.T) {
+	var tests = []struct {
+		daysOne     int
+		rateOne     float64
+		daysTwo     int
+		rateTwo     float64
+		profit      float64
+		expectedTax float64
+	}{
+
+		// this doesn't reflect real world, just for testing and demo purposes;
+		// say, we have a year with 1000 days :) and every day we earned £1,
+		// so for the first 600 days we pay 10% of tax, for the second 400 das we pay 20% tax
+		// and altogether it is: (£600 x 10%) + (£400 x 20%) = £140
+		// sorry for stupid example, it is only to demonstrate how it is calculated
+		{600, 0.1, 400, 0.2, 1000, 140},
+
+		// and now some real-life numbers: accounting period is 01/11/2016, so it splits
+		// the year for two slices by 151 and 214 days. The first 151 days should
+		// deduct 20% of taxes (£827.40) and the second 214 days - 19% (£1113.97)
+		{151, 0.20, 214, 0.19, 10000, 827.40 + 1113.97},
+	}
+
+	for _, tt := range tests {
+		t.Run("calc two periods", func(t *testing.T) {
+
+			// When:
+			tax := calculateTwoPeriodsDifferentRate(tt.daysOne, tt.rateOne, tt.daysTwo, tt.rateTwo, tt.profit)
+
+			// Then:
+			assert.Equal(t, tt.expectedTax, tax)
 		})
 	}
 }

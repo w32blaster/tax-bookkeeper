@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
+	"math"
 	"strconv"
 	"time"
 )
@@ -12,7 +13,7 @@ const (
 	financialYearStartMonth = time.April
 )
 
-// CalculateCorporateTax calculate corporate tax for a given financual year
+// CalculateCorporateTax calculate corporate tax for a given financial year
 //     yearProfit - company profit in £ (profit = revenue - expenses - pension - salary)
 //     accountingPeriodEnd - end of accounting period specific for your company. It may be different from
 //                           financial year (1 April - 31 March).
@@ -37,10 +38,8 @@ func CalculateCorporateTax(yearProfit float64, accountingPeriodStartDate time.Ti
 
 	// otherwise, necessary tax will be calculated proportionally against
 	// the government's tax year period date
-
-	// .... add last bit
-
-	return 0
+	daysOne, daysTwo := getDaysForPeriods(accountingPeriodStartDate)
+	return calculateTwoPeriodsDifferentRate(daysOne, ratePrev, daysTwo, rateNext, yearProfit)
 }
 
 // split accounting period by two slices. Depending on if the start date before of after 1st of April,
@@ -81,6 +80,23 @@ func getFinYear(accPeriodStartDate time.Time) string {
 //
 //    1) financial year starting 1 April 2016 for 90 days (1 January 2017 to 31 March 2017)
 //    2) financial year starting 1 April 2017 for 275 days (1 April 2017 to 31 December 2017)
+//
+//    Before 1st of April
+//
+//              ┌------------------------┐
+//              |   accounting period    |
+//+---------|---+-----+-------------|----+---+----->
+//         2019       ↑            2020      ↑
+//                1st of April             1st of April
+//
+//
+//    After 1st of April
+//                       ┌----------------------┐
+//                       |   accounting period  |
+//+---------|---------+--+----------|--------+--+---->
+//         2019       ↑            2020      ↑
+//                 1st of April            1st of April
+//
 func getDaysForPeriods(accPeriodStartDate time.Time) (int, int) {
 	year := accPeriodStartDate.Year()
 	financialYearStartInThisYear := time.Date(year, financialYearStartMonth, financialYearStartDay, 0, 0, 0, 0, conf.GMT)
@@ -99,4 +115,17 @@ func getDaysForPeriods(accPeriodStartDate time.Time) (int, int) {
 	}
 
 	return daysPrev, daysNext
+}
+
+// if our accounting period doesn't match financial year, then it is divided by 1st of April by
+// two periods. And if these periods have different Corporate Tax Rate, we should calculate it
+// proportionally against the government's tax year period date.
+// Please refer to unit test for examples
+func calculateTwoPeriodsDifferentRate(daysOne int, rateOne float64, daysTwo int, rateTwo float64, profit float64) float64 {
+	daysInYear := float64(daysOne + daysTwo) // should be 365 or 366
+
+	tax := (profit*(float64(daysOne)/daysInYear))*rateOne + /* period before 1st of April */
+		(profit*(float64(daysTwo)/daysInYear))*rateTwo /* period after 1st of April */
+
+	return math.Round(tax*100) / 100 // round for two decimal places
 }
