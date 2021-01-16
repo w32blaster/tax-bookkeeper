@@ -43,7 +43,24 @@ func CalculateCorporateTax(yearProfit float64, accountingPeriodStartDate time.Ti
 }
 
 // split accounting period by two slices. Depending on if the start date before of after 1st of April,
-// it can return different periods. For examples please refer to unit test
+// it can return different periods. For examples please refer to unit test.
+//
+//   Before 1st of April:
+//
+//                 ┌------------------------┐
+//                 |   accounting period    |
+//   +---------|---+-----+-------------|----+---+----->
+//            2019       ↑            2020      ↑
+//                   1st of April             1st of April
+//
+//
+//   After 1st of April:
+//                          ┌----------------------┐
+//                          |   accounting period  |
+//   +---------|---------+--+----------|--------+--+---->
+//            2019       ↑            2020      ↑
+//                    1st of April            1st of April
+//
 func getTwoPeriods(accPeriodStartDate time.Time) (string, string) {
 
 	year := accPeriodStartDate.Year()
@@ -80,22 +97,6 @@ func getFinYear(accPeriodStartDate time.Time) string {
 //
 //    1) financial year starting 1 April 2016 for 90 days (1 January 2017 to 31 March 2017)
 //    2) financial year starting 1 April 2017 for 275 days (1 April 2017 to 31 December 2017)
-//
-//    Before 1st of April
-//
-//              ┌------------------------┐
-//              |   accounting period    |
-//+---------|---+-----+-------------|----+---+----->
-//         2019       ↑            2020      ↑
-//                1st of April             1st of April
-//
-//
-//    After 1st of April
-//                       ┌----------------------┐
-//                       |   accounting period  |
-//+---------|---------+--+----------|--------+--+---->
-//         2019       ↑            2020      ↑
-//                 1st of April            1st of April
 //
 func getDaysForPeriods(accPeriodStartDate time.Time) (int, int) {
 	year := accPeriodStartDate.Year()

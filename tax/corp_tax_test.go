@@ -25,12 +25,12 @@ func Test_calculateCorporateTax(t *testing.T) {
 			60000.00, dateOf("01-04-2016"), 12000.00},
 
 		// the accounting period doesn't match, both both periods have the same rate
-		{"accounting date matches financial year 19%",
+		{"accounting date doesn't match a year but both periods have 19%",
 			40000.00, dateOf("30-12-2019"), 7600.00},
-		{"accounting date matches financial year 20%",
+		{"accounting date doesn't match a year but both periods have 20%",
 			60000.00, dateOf("01-09-2015"), 12000.00},
 
-		{"PROVERIT ETO VRUSHNUJU",
+		{"accounting date splits year with two slices with different rates 20% old one and 19% new",
 			60000.00, dateOf("01-11-2016"), 11648.22},
 	}
 
