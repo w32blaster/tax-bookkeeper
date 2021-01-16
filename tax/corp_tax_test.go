@@ -1,4 +1,4 @@
-package main
+package tax
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -127,39 +127,32 @@ func Test_getDaysForPeriods(t *testing.T) {
 	}
 }
 
-func Test_calculateTwoPeriodsDifferentRate(t *testing.T) {
-	var tests = []struct {
-		daysOne     int
-		rateOne     float64
-		daysTwo     int
-		rateTwo     float64
-		profit      float64
-		expectedTax float64
-	}{
+// this doesn't reflect real world, just for testing and demo purposes;
+// say, we have a year with 1000 days :) and every day we earned £1,
+// so for the first 600 days we pay 10% of tax, for the second 400 das we pay 20% tax
+// and altogether it is: (£600 x 10%) + (£400 x 20%) = £140
+// sorry for stupid example, it is only to demonstrate how it is calculated
+func Test_calculateTwoPeriodsDifferentRate_FakeNumbers(t *testing.T) {
 
-		// this doesn't reflect real world, just for testing and demo purposes;
-		// say, we have a year with 1000 days :) and every day we earned £1,
-		// so for the first 600 days we pay 10% of tax, for the second 400 das we pay 20% tax
-		// and altogether it is: (£600 x 10%) + (£400 x 20%) = £140
-		// sorry for stupid example, it is only to demonstrate how it is calculated
-		{600, 0.1, 400, 0.2, 1000, 140},
+	// When:
+	tax := calculateTwoPeriodsDifferentRate(600, 0.1, 400, 0.2, 1000)
 
-		// and now some real-life numbers: accounting period is 01/11/2016, so it splits
-		// the year for two slices by 151 and 214 days. The first 151 days should
-		// deduct 20% of taxes (£827.40) and the second 214 days - 19% (£1113.97)
-		{151, 0.20, 214, 0.19, 10000, 827.40 + 1113.97},
-	}
+	// Then:
+	assert.Equal(t, float64(140), tax)
+}
 
-	for _, tt := range tests {
-		t.Run("calc two periods", func(t *testing.T) {
+// and now some real-life numbers: accounting period begins at 01/11/2016, so it splits
+// the financial year for two slices by 151 and 214 days. The first 151 days should
+// deduct 20% of taxes (£827.40) and the second 214 days - 19% (£1113.97)
+func Test_calculateTwoPeriodsDifferentRate_RealNumbers(t *testing.T) {
 
-			// When:
-			tax := calculateTwoPeriodsDifferentRate(tt.daysOne, tt.rateOne, tt.daysTwo, tt.rateTwo, tt.profit)
+	expectedTax := 827.40 + 1113.97
 
-			// Then:
-			assert.Equal(t, tt.expectedTax, tax)
-		})
-	}
+	// When:
+	tax := calculateTwoPeriodsDifferentRate(151, 0.20, 214, 0.19, 10000)
+
+	// Then:
+	assert.Equal(t, expectedTax, tax)
 }
 
 // shorthand for the date creation, like "01-03-2021"

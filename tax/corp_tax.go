@@ -1,4 +1,4 @@
-package main
+package tax
 
 import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
