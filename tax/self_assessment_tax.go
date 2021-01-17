@@ -14,12 +14,12 @@ func CalculateSelfAssessmentTax(income, costs float64) float64 {
 	return personalTax
 }
 
-// 	Band						Taxable income	 		Tax rate
-//  -------------				--------------			---------
-// 	Personal Allowance 			Up to £12,500	 		0%
-// 	Basic rate			 		£12,501 to £50,000 		20%
-// 	Higher rate 				£50,001 to £150,000 	40%
-// 	Additional rate 			over £150,000 			45% (rich bastard!)
+//    Band                    Taxable income         Tax rate
+//    -------------           --------------         ---------
+//    Personal Allowance      Up to £12,500          0%
+//    Basic rate              £12,501 to £50,000     20%
+//    Higher rate             £50,001 to £150,000    40%
+//    Additional rate         over £150,000          45% (rich bastard!)
 //
 // please refer to unit tests for examples
 //
