@@ -14,6 +14,7 @@ func Test_CalculateSelfAssessmentTax(t *testing.T) {
 	}{
 		{90000, 0, 28104},
 		{60000, 1000, 15084},
+		{80000, 3000, 22644},
 	}
 
 	for _, tt := range tests {
@@ -109,6 +110,41 @@ func Test_getPersonalAllowanceForRich(t *testing.T) {
 
 				// Then:
 				assert.Equal(t, tt.expectedAllowance, allowance)
+			},
+		)
+	}
+}
+
+func Test_getNITax(t *testing.T) {
+
+	var tests = []struct {
+		profitBeforeTaxes float64
+		expectedClass2Tax float64
+		expectedClass4Tax float64
+	}{
+		{20000, 159.00, 945.00},
+		{30000, 159.00, 1845.00},
+		{40000, 159.00, 2745.00},
+		{50000, 159.00, 3645.00},
+		{60000, 159.00, 3845.00},
+		{70000, 159.00, 4045.00},
+		{80000, 159.00, 4245.00},
+		{90000, 159.00, 4445.00},
+		{100000, 159.00, 4645.00},
+		{110000, 159.00, 4845.00},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Expected NI %.0f tax from %.0f income",
+			tt.expectedClass2Tax+tt.expectedClass4Tax, tt.profitBeforeTaxes),
+			func(t *testing.T) {
+
+				// When:
+				class2Tax, class4Tax := getNITax(tt.profitBeforeTaxes)
+
+				// Then:
+				assert.Equal(t, tt.expectedClass2Tax, class2Tax)
+				assert.Equal(t, tt.expectedClass4Tax, class4Tax)
 			},
 		)
 	}
