@@ -1,7 +1,10 @@
 package tax
 
+import "math"
+
 const (
 	personalAllowance = 12500.0
+	weeksInAYear      = 52
 )
 
 // Tax Year is from 6 April to 5 April
@@ -11,7 +14,9 @@ func CalculateSelfAssessmentTax(income, costs float64) float64 {
 
 	personalTax := getPersonalTaxFrom(profitBeforeTaxes)
 
-	return personalTax
+	class2NITax, class4NITax := getNITax(profitBeforeTaxes)
+
+	return personalTax + class2NITax + class4NITax
 }
 
 //    Band                    Taxable income         Tax rate
@@ -65,4 +70,31 @@ func getPersonalAllowance(profitBeforeTaxes float64) float64 {
 		return 0
 	}
 	return personalAllowance - (profitBeforeTaxes-100000)/2
+}
+
+// Class 	Rate for tax year 2020 to 2021
+// -----    --------------------
+// Class 2 	£3.05 a week
+// Class 4 	9% on profits between £9,501 and £50,000
+//          2% on profits over £50,000
+func getNITax(profitBeforeTaxes float64) (float64, float64) {
+
+	// THIS MUST BE CONFIGURABLE BY YEARS
+	const yearlyPrimaryThreshold = 9501
+	const yearlyUpperEarningsLimit = 50000
+	const class2PerWeek = 3.05
+
+	class2 := class2PerWeek * weeksInAYear
+
+	var class4 float64
+	if profitBeforeTaxes < yearlyPrimaryThreshold {
+		class4 = 0.0
+	} else if profitBeforeTaxes >= yearlyPrimaryThreshold && profitBeforeTaxes < yearlyUpperEarningsLimit {
+		class4 = (profitBeforeTaxes - yearlyPrimaryThreshold) * 0.09
+	} else {
+		class4 = (yearlyUpperEarningsLimit-yearlyPrimaryThreshold)*0.09 +
+			(profitBeforeTaxes-yearlyUpperEarningsLimit)*0.02
+	}
+
+	return math.Round(class2), math.Round(class4)
 }
