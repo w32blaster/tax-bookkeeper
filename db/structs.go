@@ -28,6 +28,23 @@ const (
 	FixedAssetPurchase
 )
 
+var TransactionLabelMap = map[string]TransactionCategory{
+	"Unknown": Unknown,
+	"Split between company and personal accounts":                Personal,
+	"Legal (accountancy, advertising)":                           Legal,
+	"Travel expenses":                                            Travel,
+	"Office expenses":                                            Office,
+	"Equipment expenses":                                         EquipmentExpenses,
+	"Premises (heat, water, electricity)":                        Premises,
+	"Cost of Sales (goods purchased for resale, subcontractors)": CostOfSales,
+	"Wage payments, non-director salaries":                       WagesPayment,
+	"Penalties and fines":                                        Penalties,
+	"Bank charges":                                               BankCharges,
+	"Pension":                                                    Pension,
+	"HMRC (VAT payment, Corp Tax etc)":                           HMRC,
+	"Fixed assets purchase":                                      FixedAssetPurchase,
+}
+
 type (
 	Transaction struct {
 		Pk            int             `storm:"id,increment"` // primary key with auto increment

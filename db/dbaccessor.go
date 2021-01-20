@@ -37,6 +37,25 @@ func (d Database) GetAll() ([]Transaction, error) {
 	return transactions, err
 }
 
+func (d Database) AllocateTransactions(cats map[int]TransactionCategory) error {
+	tx, err := d.db.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for pk, cat := range cats {
+		if err := tx.UpdateField(&Transaction{Pk: pk}, "ToBeAllocated", false); err != nil {
+			return err
+		}
+		if err := tx.UpdateField(&Transaction{Pk: pk}, "Category", cat); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (d Database) GetUnallocated() ([]Transaction, error) {
 	var transactions []Transaction
 	err := d.db.Find("ToBeAllocated", true, &transactions)
