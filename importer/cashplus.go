@@ -2,7 +2,6 @@ package importer
 
 import (
 	"encoding/csv"
-	"fmt"
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"io"
@@ -42,20 +41,17 @@ func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
 		}
 
 		transactions = append(transactions, db.Transaction{
-			Date:        getDate(record[0]),
-			Card:        record[1],
-			Type:        getType(record[2]),
-			Description: record[3],
-			Credit:      getMoneySum(record[4]),
-			Debit:       getMoneySum(record[5]),
-			Balance:     getMoneySum(record[6]),
-			IsAllocated: false,
-			Category:    db.Unknown,
+			Date:          getDate(record[0]),
+			Card:          record[1],
+			Type:          getType(record[2]),
+			Description:   record[3],
+			Credit:        getMoneySum(record[4]),
+			Debit:         getMoneySum(record[5]),
+			Balance:       getMoneySum(record[6]),
+			ToBeAllocated: true,
+			Category:      db.Unknown,
 		})
-
 	}
-
-	fmt.Println(transactions)
 
 	return transactions
 }

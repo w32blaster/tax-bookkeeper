@@ -9,8 +9,7 @@ import (
 )
 
 type Database struct {
-	db           *storm.DB
-	databasePath string
+	db *storm.DB
 }
 
 func Init() *Database {
@@ -20,6 +19,8 @@ func Init() *Database {
 	if err != nil {
 		panic(err)
 	}
+
+	boltdb.Init(&Transaction{})
 
 	return &Database{
 		db: boltdb,
@@ -36,11 +37,17 @@ func (d Database) GetAll() ([]Transaction, error) {
 	return transactions, err
 }
 
-func (d Database) ImportTransactions(transactions []Transaction) error {
+func (d Database) GetUnallocated() ([]Transaction, error) {
+	var transactions []Transaction
+	err := d.db.Find("ToBeAllocated", true, &transactions)
+	return transactions, err
+}
+
+func (d Database) ImportTransactions(transactions []Transaction) (int, error) {
 
 	tx, err := d.db.Begin(true)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer tx.Rollback()
 
@@ -50,5 +57,5 @@ func (d Database) ImportTransactions(transactions []Transaction) error {
 		}
 	}
 
-	return tx.Commit()
+	return len(transactions), tx.Commit()
 }

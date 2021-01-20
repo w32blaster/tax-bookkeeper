@@ -30,15 +30,15 @@ const (
 
 type (
 	Transaction struct {
-		Pk          int             `storm:"id,increment"` // primary key with auto increment
-		Date        time.Time       `storm:"index"`        // midnight, GMT
-		Type        TransactionType `storm:"index"`
-		Card        string          // last 4 digits
-		Description string
-		Credit      float64
-		Debit       float64
-		Balance     float64
-		IsAllocated bool                `storm:"index"` // when category of this transaction is specified, it is "allocated"
-		Category    TransactionCategory `storm:"index"`
+		Pk            int             `storm:"id,increment"` // primary key with auto increment
+		Date          time.Time       `storm:"index"`        // midnight, GMT
+		Type          TransactionType `storm:"index"`
+		Card          string          // last 4 digits
+		Description   string
+		Credit        float64
+		Debit         float64
+		Balance       float64
+		ToBeAllocated bool                `storm:"index"` // when category of this transaction is specified, it is "allocated"
+		Category      TransactionCategory `storm:"index"`
 	}
 )
