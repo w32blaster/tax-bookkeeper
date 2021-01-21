@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/asdine/storm/v3"
 	"github.com/asdine/storm/v3/codec/msgpack"
+	"github.com/asdine/storm/v3/q"
 	"go.etcd.io/bbolt"
 	"log"
 	"time"
@@ -58,7 +59,13 @@ func (d Database) AllocateTransactions(cats map[int]TransactionCategory) error {
 
 func (d Database) GetUnallocated() ([]Transaction, error) {
 	var transactions []Transaction
-	err := d.db.Find("ToBeAllocated", true, &transactions)
+	query := d.db.Select(
+		q.And(
+			q.Eq("ToBeAllocated", true),
+			q.Eq("Type", Debit),
+		),
+	)
+	err := query.Find(&transactions)
 	return transactions, err
 }
 
