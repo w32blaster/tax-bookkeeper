@@ -40,16 +40,26 @@ func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
 			continue
 		}
 
+		txType := getType(record[2])
+		category := db.Unknown
+		toBeAllocated := true
+
+		// income transaction we don't need allocate, we know it is always "income"
+		if txType == db.Credit {
+			category = db.Income
+			toBeAllocated = false
+		}
+
 		transactions = append(transactions, db.Transaction{
 			Date:          getDate(record[0]),
 			Card:          record[1],
-			Type:          getType(record[2]),
+			Type:          txType,
 			Description:   record[3],
 			Credit:        getMoneySum(record[4]),
 			Debit:         getMoneySum(record[5]),
 			Balance:       getMoneySum(record[6]),
-			ToBeAllocated: true,
-			Category:      db.Unknown,
+			ToBeAllocated: toBeAllocated,
+			Category:      category,
 		})
 	}
 

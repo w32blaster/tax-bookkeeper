@@ -20,23 +20,12 @@ func (t *TerminalUI) Start() {
 
 func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Transaction) {
 
-	var labels []string
-	for k, _ := range db.TransactionLabelMap {
-		labels = append(labels, k)
-	}
-
 	form := tview.NewForm()
 
-	var currentPrice float64
 	mapSelectedOptions := make(map[int]db.TransactionCategory)
 	for idx, tx := range unallocatedTxs {
-		if tx.Debit != 0 {
-			currentPrice = tx.Debit
-		} else {
-			currentPrice = tx.Credit
-		}
-		rowText := fmt.Sprintf("%d) %.2f (%s) - \n %s", idx, currentPrice, tx.Date.Format("02 Jan 06"), tx.Description)
-		form.AddDropDown(rowText, labels, 0, func(option string, optionIndex int) {
+		rowText := fmt.Sprintf("%d) %.2f (%s) - \n %s", idx, tx.Debit, tx.Date.Format("02 Jan 06"), tx.Description)
+		form.AddDropDown(rowText, db.LabelsTransactionType, 0, func(option string, optionIndex int) {
 			mapSelectedOptions[tx.Pk] = db.TransactionLabelMap[option]
 		})
 	}
@@ -48,9 +37,9 @@ func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Trans
 		} else {
 			modal := tview.NewModal().
 				SetText("All data updated").
-				AddButtons([]string{"Ok"}).
+				AddButtons([]string{" Ok "}).
 				SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-					if buttonLabel == "Ok" {
+					if buttonLabel == " Ok " {
 						t.DB.Close()
 						t.app.Stop()
 					}

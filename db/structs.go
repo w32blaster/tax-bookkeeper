@@ -1,6 +1,9 @@
 package db
 
-import "time"
+import (
+	"sort"
+	"time"
+)
 
 type TransactionType int
 
@@ -26,6 +29,7 @@ const (
 	Pension
 	HMRC
 	FixedAssetPurchase
+	Income
 )
 
 var TransactionLabelMap = map[string]TransactionCategory{
@@ -43,6 +47,15 @@ var TransactionLabelMap = map[string]TransactionCategory{
 	"Pension":                                                    Pension,
 	"HMRC (VAT payment, Corp Tax etc)":                           HMRC,
 	"Fixed assets purchase":                                      FixedAssetPurchase,
+}
+
+var LabelsTransactionType []string
+
+func init() {
+	for k, _ := range TransactionLabelMap {
+		LabelsTransactionType = append(LabelsTransactionType, k)
+	}
+	sort.Strings(LabelsTransactionType)
 }
 
 type (
