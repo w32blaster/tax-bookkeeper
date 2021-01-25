@@ -23,7 +23,7 @@ func CalculateCorporateTax(yearProfit float64, accountingPeriodStartDate time.Ti
 
 	// simply multiply profit by rate
 	if isMatchingFinYear(accountingPeriodStartDate) {
-		finYear := getFinYear(accountingPeriodStartDate)
+		finYear := GetFinYear(accountingPeriodStartDate)
 		rate := conf.CorporationTaxRates[finYear]
 		return yearProfit * rate
 	}
@@ -85,7 +85,8 @@ func isMatchingFinYear(accPeriodStartDate time.Time) bool {
 }
 
 // returns year period for the giving accounting period
-func getFinYear(accPeriodStartDate time.Time) string {
+func GetFinYear(accPeriodStartDate time.Time) string {
+	// TODO: THIS CAN BE INCORRECT, especially when this is the last month of the year, then it could be year-1
 	year := accPeriodStartDate.Year()
 	return strconv.Itoa(year) + "-" + strconv.Itoa(year+1)
 }

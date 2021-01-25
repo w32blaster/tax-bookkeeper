@@ -19,6 +19,7 @@ const dateFormat = "02-Jan-06"
 
 func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
 
+	// TODO: if this is a folder, then scan all the CSV files and import all of them
 	f, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)

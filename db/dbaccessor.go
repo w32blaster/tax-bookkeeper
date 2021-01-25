@@ -102,10 +102,53 @@ func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error
 	return revenue, nil
 }
 
-func (d Database) GetExpensesSince(accountingDateStart time.Time) float64 {
-	return 0
+func (d Database) GetExpensesSince(accountingDateStart time.Time) (float64, error) {
+	var transactions []Transaction
+	query := d.db.Select(
+		q.And(
+			q.Gt("Date", accountingDateStart),
+			q.Eq("Type", Debit),
+			q.Eq("ToBeAllocated", true),
+			q.Or(
+				q.Eq("Category", Legal),
+				q.Eq("Category", Travel),
+				q.Eq("Category", Office),
+				q.Eq("Category", EquipmentExpenses),
+				q.Eq("Category", Premises),
+				q.Eq("Category", FixedAssetPurchase),
+			),
+		),
+	)
+	if err := query.Find(&transactions); err != nil {
+		return 0, err
+	}
+
+	var expenses float64
+	for _, idx := range transactions {
+		expenses = expenses + idx.Credit
+	}
+	return expenses, nil
+
 }
 
-func (d Database) GetPensionSince(accountingDateStart time.Time) float64 {
-	return 0
+func (d Database) GetPensionSince(accountingDateStart time.Time) (float64, error) {
+
+	var transactions []Transaction
+	query := d.db.Select(
+		q.And(
+			q.Gt("Date", accountingDateStart),
+			q.Eq("Type", Debit),
+			q.Eq("ToBeAllocated", true),
+			q.Eq("Category", Pension),
+		),
+	)
+	if err := query.Find(&transactions); err != nil {
+		return 0, err
+	}
+
+	var pension float64
+	for _, idx := range transactions {
+		pension = pension + idx.Credit
+	}
+	return pension, nil
 }
