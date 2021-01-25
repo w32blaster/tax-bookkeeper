@@ -59,13 +59,7 @@ func (d Database) AllocateTransactions(cats map[int]TransactionCategory) error {
 
 func (d Database) GetUnallocated() ([]Transaction, error) {
 	var transactions []Transaction
-	query := d.db.Select(
-		q.And(
-			q.Eq("ToBeAllocated", true),
-			q.Eq("Type", Debit),
-		),
-	)
-	err := query.Find(&transactions)
+	err := d.db.Find("ToBeAllocated", true, &transactions)
 	return transactions, err
 }
 
@@ -84,4 +78,34 @@ func (d Database) ImportTransactions(transactions []Transaction) (int, error) {
 	}
 
 	return len(transactions), tx.Commit()
+}
+
+func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error) {
+
+	var transactions []Transaction
+	query := d.db.Select(
+		q.And(
+			q.Gt("Date", accountingDateStart),
+			q.Eq("Type", Credit),
+			q.Eq("ToBeAllocated", true),
+			q.Eq("Category", Income),
+		),
+	)
+	if err := query.Find(&transactions); err != nil {
+		return 0, err
+	}
+
+	var revenue float64
+	for _, idx := range transactions {
+		revenue = revenue + idx.Credit
+	}
+	return revenue, nil
+}
+
+func (d Database) GetExpensesSince(accountingDateStart time.Time) float64 {
+	return 0
+}
+
+func (d Database) GetPensionSince(accountingDateStart time.Time) float64 {
+	return 0
 }

@@ -1,35 +1,47 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/importer"
 	"github.com/w32blaster/tax-bookkeeper/ui"
 	"log"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
-var importCashPlus string
+var importCashPlus, accountingPeriodStartDate string
+var r = regexp.MustCompile("^[0-9]{2}-[0-9]{2}$")
 
 func main() {
 	flag.Parse()
+	// TODO: validate date if set
 
 	d := db.Init()
 	defer d.Close()
 
-	gui := ui.TerminalUI{DB: d}
+	gui := ui.TerminalUI{}
 
+	// import data and exit
 	if importCashPlus != "" {
 		importDataAndExit(importer.CashPlus{}, d, importCashPlus)
 	}
 
-	if unallocatedTransactions, err := d.GetUnallocated(); err != nil {
-		log.Fatal(err)
-	} else if len(unallocatedTransactions) > 0 {
+	// if there are unallocated transactions, show the list
+	if unallocatedTransactions, err := d.GetUnallocated(); err == nil && len(unallocatedTransactions) > 0 {
 		gui.Start()
-		gui.BeginDialogToAllocateTransactions(unallocatedTransactions)
+		gui.BeginDialogToAllocateTransactions(unallocatedTransactions, d.AllocateTransactions)
 	}
+
+	// or show the dashboards
+	gui.Start()
+
 }
 
 func importDataAndExit(i importer.Importer, d *db.Database, filePath string) {
@@ -46,4 +58,44 @@ func importDataAndExit(i importer.Importer, d *db.Database, filePath string) {
 
 func init() {
 	flag.StringVar(&importCashPlus, "import-cashplus", "", "import transactions in CSV format from Cashplus")
+	flag.StringVar(&accountingPeriodStartDate, "accounting-start", "", "If your Accounting Period start is different from financial year start," +
+		"you can set your date with this parameter, (example 01-11 which is 1st of November)")
+}
+
+// here we find the current account date.
+// Please refer to unit tests
+func getNearestAccountingDate(accountingDateStart string, now time.Time) (time.Time, error) {
+
+	if !r.MatchString(accountingDateStart) {
+		return time.Time{}, errors.New("the incoming data is not valid! It should be like '01-11' (1st of November)")
+	}
+
+	parts := strings.Split(accountingDateStart, "-")
+	day, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return time.Time{}, err
+	}
+	if day < 1 || day > 31 {
+		return time.Time{}, errors.New("day must be between 1 and 31")
+	}
+
+	m, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return time.Time{}, err
+	}
+	if m < 1 || m > 12 {
+		return time.Time{}, errors.New("month must be between 1 and 12")
+	}
+	month := time.Month(m)
+
+	// today is the first day of a new accounting period year
+	if day == now.Day() && month == now.Month() {
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, conf.GMT), nil
+	}
+
+	if now.Month() < month {
+		return time.Date(now.Year() - 1, month, day, 0, 0, 0, 0, conf.GMT), nil
+	}
+
+	return time.Date(now.Year(), month, day, 0, 0, 0, 0, conf.GMT), nil
 }

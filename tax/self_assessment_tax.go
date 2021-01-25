@@ -8,6 +8,7 @@ const (
 )
 
 // Tax Year is from 6 April to 5 April
+// https://www.gov.uk/income-tax-rates
 func CalculateSelfAssessmentTax(income, costs float64) float64 {
 
 	profitBeforeTaxes := income - costs
