@@ -27,26 +27,28 @@ func getInitialOptionByDescription(tx db.Transaction) int {
 	descr := strings.ToLower(tx.Description)
 	if tx.Type == db.Credit {
 		if strings.Contains(descr, "loan") {
-			db.CreditTransactionUI.GetPositionFor(db.LoansReturn)
+			return db.CreditTransactionUI.GetPositionFor(db.LoansReturn)
 		}
 		return db.CreditTransactionUI.GetPositionFor(db.Income)
 
 	} else {
 
 		if strings.Contains(descr, "dividend") {
-			db.DebitTransactionUI.GetPositionFor(db.Personal)
+			return db.DebitTransactionUI.GetPositionFor(db.Personal)
 		} else if strings.Contains(descr, "salary") {
-			db.DebitTransactionUI.GetPositionFor(db.Personal)
+			return db.DebitTransactionUI.GetPositionFor(db.Personal)
 		} else if strings.Contains(descr, "AMZNMktplace" /* amazon payment */) {
-			db.DebitTransactionUI.GetPositionFor(db.EquipmentExpenses)
+			return db.DebitTransactionUI.GetPositionFor(db.EquipmentExpenses)
 		} else if strings.Contains(descr, "energy") {
-			db.DebitTransactionUI.GetPositionFor(db.Premises)
+			return db.DebitTransactionUI.GetPositionFor(db.Premises)
 		} else if strings.Contains(descr, "water") {
-			db.DebitTransactionUI.GetPositionFor(db.Premises)
+			return db.DebitTransactionUI.GetPositionFor(db.Premises)
 		} else if strings.Contains(descr, "forx") {
-			db.DebitTransactionUI.GetPositionFor(db.BankCharges)
+			return db.DebitTransactionUI.GetPositionFor(db.BankCharges)
 		} else if strings.Contains(descr, "loan") {
-			db.DebitTransactionUI.GetPositionFor(db.Loan)
+			return db.DebitTransactionUI.GetPositionFor(db.Loan)
+		} else if strings.Contains(descr, "hmrc") {
+			return db.DebitTransactionUI.GetPositionFor(db.HMRC)
 		}
 
 		return db.DebitTransactionUI.GetPositionFor(db.BankCharges)
