@@ -54,26 +54,65 @@ var TransactionDebitLabelMap = map[string]TransactionCategory{
 }
 
 var TransactionCreditLabelMap = map[string]TransactionCategory{
-    "Income":                                                     Income,
-    "Loan Return":                                                LoansReturn,
+    "income":                                                     Income,
+    "loan Return":                                                LoansReturn,
 }
 
-var LabelsTransactionTypeDebit []string
-var LabelsTransactionTypeCredit []string
+type TransactionUi struct {
+    labels []string
+    categoryToLabelPosition map[TransactionCategory]int
+}
+
+func (d TransactionUi) GetLabels() []string {
+    return d.labels
+}
+
+func (d TransactionUi) GetPositionFor(category TransactionCategory) int {
+    return d.categoryToLabelPosition[category]
+}
+
+
+var DebitTransactionUI TransactionUi
+var CreditTransactionUI TransactionUi
 
 func init() {
 
     // Debit labels
-    for k, _ := range TransactionDebitLabelMap {
-        LabelsTransactionTypeDebit = append(LabelsTransactionTypeDebit, k)
-    }
-    sort.Strings(LabelsTransactionTypeDebit)
+    DebitTransactionUI = createUiElementFrom(TransactionDebitLabelMap)
 
     // Credit labels
-    for k, _ := range TransactionCreditLabelMap {
-        LabelsTransactionTypeCredit = append(LabelsTransactionTypeCredit, k)
+    CreditTransactionUI = createUiElementFrom(TransactionCreditLabelMap)
+}
+
+// creates one element to me used for UI, to draw a Dropdown List
+func createUiElementFrom(categories map[string]TransactionCategory) TransactionUi {
+
+    // make array of labels to be displayed in dropdown list
+    var labels = make([]string, len(categories))
+    for k, _ := range categories {
+        labels = append(labels, k)
     }
-    sort.Strings(LabelsTransactionTypeCredit)
+    sort.Strings(labels)
+
+    // build map category <=> position in an array
+    var positions = make(map[TransactionCategory]int, len(categories))
+    for k,v := range categories {
+        positions[v] = getPosition(k, labels)
+    }
+    
+    return TransactionUi{
+        labels: labels,
+        categoryToLabelPosition: positions,
+    }
+}
+
+func getPosition(label string, arr []string) int {
+    for i, l := range arr {
+        if l == label {
+            return i
+        }
+    }
+    return 0
 }
 
 type (

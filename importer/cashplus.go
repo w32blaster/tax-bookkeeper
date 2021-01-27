@@ -2,11 +2,13 @@ package importer
 
 import (
 	"encoding/csv"
+	"fmt"
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -15,12 +17,52 @@ import (
 // https://cashplus.com/
 type CashPlus struct{}
 
-const dateFormat = "02-Jan-06"
+const dateFormat = "02 January 2006"
 
-func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
+func (c CashPlus) ReadAndParseFiles(path string) []db.Transaction {
 
-	// TODO: if this is a folder, then scan all the CSV files and import all of them
-	f, err := os.Open(path)
+	importPath, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		log.Fatal("File " + path + " does not exist. Exit")
+	}
+
+	if importPath.IsDir() {
+
+		// in a loop import all these files
+		filePaths, err := listFilesInDir(path)
+		if err != nil {
+			log.Fatal("Can't list files inside directory, because: " + err.Error())
+		}
+
+		fmt.Printf("Found %d files\n\n", len(filePaths))
+		var transactions = make([]db.Transaction, len(filePaths))
+		for _, filePath := range filePaths {
+			transactions = append(transactions, readAndImportSingleFile(filePath)...)
+		}
+		return transactions
+
+	} else {
+		// this is a file, just import one file
+		return readAndImportSingleFile(path)
+	}
+}
+
+func listFilesInDir(root string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
+	return files, err
+}
+
+
+func readAndImportSingleFile(filePath string) []db.Transaction {
+
+	fmt.Println("  - Parsing file " + filePath)
+	f, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,13 +85,6 @@ func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
 
 		txType := getType(record[2])
 		category := db.Unknown
-		toBeAllocated := true
-
-		// income transaction we don't need allocate, we know it is always "income"
-		if txType == db.Credit {
-			category = db.Income
-			toBeAllocated = false
-		}
 
 		transactions = append(transactions, db.Transaction{
 			Date:          getDate(record[0]),
@@ -59,7 +94,7 @@ func (c CashPlus) ReadAndParseFile(path string) []db.Transaction {
 			Credit:        getMoneySum(record[4]),
 			Debit:         getMoneySum(record[5]),
 			Balance:       getMoneySum(record[6]),
-			ToBeAllocated: toBeAllocated,
+			ToBeAllocated: true,
 			Category:      category,
 		})
 	}

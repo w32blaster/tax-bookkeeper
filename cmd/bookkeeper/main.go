@@ -16,11 +16,19 @@ import (
 	"time"
 )
 
+var isHelp bool
 var importCashPlus, accountingPeriodStartDate string
 var r = regexp.MustCompile("^[0-9]{2}-[0-9]{2}$")
 
 func main() {
 	flag.Parse()
+	if isHelp {
+		fmt.Println("Tax Bookeeper. Helps you to analyze your taxes. Usage \n\n " +
+			"-import-cashplus=/some/path - import transactions for CashPlus bank (file or directory) \n " +
+			"-accounting-start=01-11 - set the accounting period date, if it doesn't match to financial year (1st of April)")
+		os.Exit(0)
+	}
+
 	// TODO: validate date if set
 
 	d := db.Init()
@@ -46,17 +54,18 @@ func main() {
 
 func importDataAndExit(i importer.Importer, d *db.Database, filePath string) {
 
-	transactions := i.ReadAndParseFile(filePath)
+	transactions := i.ReadAndParseFiles(filePath)
 	inserted, err := d.ImportTransactions(transactions)
 	if err != nil {
 		log.Fatal("Transactions import failed. The reason is: " + err.Error())
 	}
 
-	fmt.Printf("Successfully imported %d transactions. Exit", inserted)
+	fmt.Printf("Successfully imported %d transactions. Exit\n", inserted)
 	os.Exit(0)
 }
 
 func init() {
+	flag.BoolVar(&isHelp, "h", false, "print help")
 	flag.StringVar(&importCashPlus, "import-cashplus", "", "import transactions in CSV format from Cashplus")
 	flag.StringVar(&accountingPeriodStartDate, "accounting-start", "", "If your Accounting Period start is different from financial year start," +
 		"you can set your date with this parameter, (example 01-11 which is 1st of November)")

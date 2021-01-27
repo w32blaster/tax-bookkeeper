@@ -46,6 +46,7 @@ func Test_calculateCorporateTax(t *testing.T) {
 	}
 }
 
+// TODO: THIS CAN BE INCORRECT, especially when this is the last month of the year, then it could be year-1
 func Test_getFinYear(t *testing.T) {
 	var tests = []struct {
 		accountingPeriodStart time.Time
@@ -62,7 +63,7 @@ func Test_getFinYear(t *testing.T) {
 		t.Run(tt.expectedPeriod, func(t *testing.T) {
 
 			// When:
-			period := getFinYear(tt.accountingPeriodStart)
+			period := GetFinYear(tt.accountingPeriodStart)
 
 			// Then:
 			assert.Equal(t, tt.expectedPeriod, period)
