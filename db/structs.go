@@ -49,7 +49,7 @@ var TransactionDebitLabelMap = map[string]TransactionCategory{
 	"Pension":                                                    Pension,
 	"HMRC (VAT payment, Corp Tax etc)":                           HMRC,
 	"Fixed assets purchase":                                      FixedAssetPurchase,
-	"Load":                                                       Loan,
+	"Loan":                                                       Loan,
 }
 
 var TransactionCreditLabelMap = map[string]TransactionCategory{

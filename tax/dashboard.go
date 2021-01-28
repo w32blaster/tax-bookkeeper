@@ -8,7 +8,7 @@ import (
 )
 
 // accountingDateStart is only day and month, like 01-11
-func CollectDataForDashboard(d db.Database, accountingDateStart time.Time) ui.DashboardData {
+func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) ui.DashboardData {
 
 	// get the profit for the current accounting period since accountingDateStart until now
 	revenue, _ := d.GetRevenueSince(accountingDateStart)

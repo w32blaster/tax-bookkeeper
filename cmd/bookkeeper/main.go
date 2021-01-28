@@ -7,6 +7,7 @@ import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/importer"
+	"github.com/w32blaster/tax-bookkeeper/tax"
 	"github.com/w32blaster/tax-bookkeeper/ui"
 	"log"
 	"os"
@@ -49,7 +50,13 @@ func main() {
 
 	// or show the dashboards
 	gui.Start()
+	accPeriod, err := getNearestAccountingDate(accountingPeriodStartDate, time.Now().In(conf.GMT))
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	dashboardData := tax.CollectDataForDashboard(d, accPeriod)
+	gui.DrawDashboard(dashboardData)
 }
 
 func importDataAndExit(i importer.Importer, d *db.Database, filePath string) {
@@ -67,13 +74,17 @@ func importDataAndExit(i importer.Importer, d *db.Database, filePath string) {
 func init() {
 	flag.BoolVar(&isHelp, "h", false, "print help")
 	flag.StringVar(&importCashPlus, "import-cashplus", "", "import transactions in CSV format from Cashplus")
-	flag.StringVar(&accountingPeriodStartDate, "accounting-start", "", "If your Accounting Period start is different from financial year start," +
+	flag.StringVar(&accountingPeriodStartDate, "accounting-start", "", "If your Accounting Period start is different from financial year start,"+
 		"you can set your date with this parameter, (example 01-11 which is 1st of November)")
 }
 
 // here we find the current account date.
 // Please refer to unit tests
 func getNearestAccountingDate(accountingDateStart string, now time.Time) (time.Time, error) {
+
+	if accountingDateStart == "" {
+		accountingDateStart = "01-04" // default accounting period matches the financial year, which is the 1st of April
+	}
 
 	if !r.MatchString(accountingDateStart) {
 		return time.Time{}, errors.New("the incoming data is not valid! It should be like '01-11' (1st of November)")
@@ -103,7 +114,7 @@ func getNearestAccountingDate(accountingDateStart string, now time.Time) (time.T
 	}
 
 	if now.Month() < month {
-		return time.Date(now.Year() - 1, month, day, 0, 0, 0, 0, conf.GMT), nil
+		return time.Date(now.Year()-1, month, day, 0, 0, 0, 0, conf.GMT), nil
 	}
 
 	return time.Date(now.Year(), month, day, 0, 0, 0, 0, conf.GMT), nil

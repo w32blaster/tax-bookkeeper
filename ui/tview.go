@@ -5,6 +5,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -18,11 +19,26 @@ func (t *TerminalUI) Start() {
 	t.app = tview.NewApplication()
 }
 
-func (t *TerminalUI) ShowDashboard() {
+func (t *TerminalUI) DrawDashboard(data DashboardData) {
+
+	flex := tview.NewFlex().
+		AddItem(tview.NewBox().SetBorder(true).SetTitle(" Last transactions "), 0, 1, false).
+		AddItem(
+			tview.NewFlex().SetDirection(tview.FlexRow).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Corporate tax "), 0, 1, false).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Self-Assessment "), 0, 3, false).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle(" VAT "), 0, 1, false).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
+			0, 2, false)
+
+	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
+		panic(err)
+	}
 
 }
 
-// here we attempt to guess and prefill category dropdown list by some words in description
+// here we attempt to guess and prefill category dropdown list by some words in description,
+// add here as many "common" words so it could be easily to pre-fill dropdown list
 func getInitialOptionByDescription(tx db.Transaction) int {
 	descr := strings.ToLower(tx.Description)
 	if tx.Type == db.Credit {
@@ -37,7 +53,9 @@ func getInitialOptionByDescription(tx db.Transaction) int {
 			return db.DebitTransactionUI.GetPositionFor(db.Personal)
 		} else if strings.Contains(descr, "salary") {
 			return db.DebitTransactionUI.GetPositionFor(db.Personal)
-		} else if strings.Contains(descr, "AMZNMktplace" /* amazon payment */) {
+		} else if strings.Contains(descr, "amznmktplace" /* amazon payment */) {
+			return db.DebitTransactionUI.GetPositionFor(db.EquipmentExpenses)
+		} else if strings.Contains(descr, "amazon" /* amazon payment */) {
 			return db.DebitTransactionUI.GetPositionFor(db.EquipmentExpenses)
 		} else if strings.Contains(descr, "energy") {
 			return db.DebitTransactionUI.GetPositionFor(db.Premises)
@@ -45,13 +63,17 @@ func getInitialOptionByDescription(tx db.Transaction) int {
 			return db.DebitTransactionUI.GetPositionFor(db.Premises)
 		} else if strings.Contains(descr, "forx") {
 			return db.DebitTransactionUI.GetPositionFor(db.BankCharges)
+		} else if strings.Contains(descr, "fee") {
+			return db.DebitTransactionUI.GetPositionFor(db.BankCharges)
 		} else if strings.Contains(descr, "loan") {
 			return db.DebitTransactionUI.GetPositionFor(db.Loan)
 		} else if strings.Contains(descr, "hmrc") {
 			return db.DebitTransactionUI.GetPositionFor(db.HMRC)
+		} else if strings.Contains(descr, "pension") {
+			return db.DebitTransactionUI.GetPositionFor(db.Pension)
 		}
 
-		return db.DebitTransactionUI.GetPositionFor(db.BankCharges)
+		return db.DebitTransactionUI.GetPositionFor(db.EquipmentExpenses)
 	}
 }
 
@@ -59,6 +81,7 @@ func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Trans
 
 	form := tview.NewForm()
 
+	// populate dropdown list
 	mapSelectedOptions := make(map[int]db.TransactionCategory)
 	for idx, tx := range unallocatedTxs {
 		if tx.Type == db.Credit {
@@ -76,6 +99,7 @@ func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Trans
 		}
 	}
 
+	// button "Save" with callback
 	form.AddButton(" Save ", func() {
 		log.Println(mapSelectedOptions)
 		if err := fnAllocate(mapSelectedOptions); err != nil {
@@ -93,7 +117,7 @@ func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Trans
 		}
 	})
 
-	form.SetBorder(true).SetTitle("    Please allocate all these transactions    ").SetTitleAlign(tview.AlignLeft)
+	form.SetBorder(true).SetTitle("    Please allocate all " + strconv.Itoa(len(unallocatedTxs)) + " transactions    ").SetTitleAlign(tview.AlignLeft)
 	if err := t.app.SetRoot(form, true).SetFocus(form).Run(); err != nil {
 		panic(err)
 	}
