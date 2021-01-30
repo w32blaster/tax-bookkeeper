@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"sort"
 	"time"
 )
@@ -129,3 +130,11 @@ type (
 		Category      TransactionCategory `storm:"index"`
 	}
 )
+
+func (s *Transaction) PrettyPrint() string {
+	txAmount := s.Debit
+	if s.Type == Credit {
+		txAmount = s.Credit
+	}
+	return fmt.Sprintf("%s  %.2f  %s", s.Date.Format("2 Jan 06"), txAmount, s.Description)
+}

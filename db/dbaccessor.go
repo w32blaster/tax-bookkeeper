@@ -32,9 +32,14 @@ func (d Database) Close() {
 	d.db.Close()
 }
 
-func (d Database) GetAll() ([]Transaction, error) {
+func (d Database) GetAll(skipTo int) ([]Transaction, error) {
 	var transactions []Transaction
-	err := d.db.All(&transactions)
+	var err error
+	if skipTo == 0 {
+		err = d.db.All(&transactions)
+	} else {
+		err = d.db.All(&transactions, storm.Limit(skipTo))
+	}
 	return transactions, err
 }
 
@@ -72,6 +77,11 @@ func (d Database) ImportTransactions(transactions []Transaction) (int, error) {
 	defer tx.Rollback()
 
 	for _, v := range transactions {
+
+		if len(v.Description) == 0 && v.Balance == 0.0 {
+			continue
+		}
+
 		if err := tx.Save(&v); err != nil {
 			log.Fatalf("Can't save transaction, because %s", err.Error())
 		}
@@ -103,52 +113,49 @@ func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error
 }
 
 func (d Database) GetExpensesSince(accountingDateStart time.Time) (float64, error) {
-	var transactions []Transaction
-	query := d.db.Select(
-		q.And(
-			q.Gt("Date", accountingDateStart),
-			q.Eq("Type", Debit),
-			q.Eq("ToBeAllocated", true),
-			q.Or(
-				q.Eq("Category", Legal),
-				q.Eq("Category", Travel),
-				q.Eq("Category", Office),
-				q.Eq("Category", EquipmentExpenses),
-				q.Eq("Category", Premises),
-				q.Eq("Category", FixedAssetPurchase),
-			),
-		),
-	)
-	if err := query.Find(&transactions); err != nil {
-		return 0, err
-	}
-
-	var expenses float64
-	for _, idx := range transactions {
-		expenses = expenses + idx.Credit
-	}
-	return expenses, nil
-
+	return _calculateExpensesByType(d.db, accountingDateStart, Legal, Travel, Office, EquipmentExpenses, Premises, FixedAssetPurchase)
 }
 
 func (d Database) GetPensionSince(accountingDateStart time.Time) (float64, error) {
+	return _calculateExpensesByType(d.db, accountingDateStart, Pension)
+}
 
-	var transactions []Transaction
-	query := d.db.Select(
+func (d Database) GetMovedOut(since time.Time) (float64, error) {
+	return _calculateExpensesByType(d.db, since, Personal)
+}
+
+func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...TransactionCategory) (float64, error) {
+
+	// prepare the query
+	var catMatcher q.Matcher
+	if len(categories) == 1 {
+		catMatcher = q.Eq("Category", categories[0])
+	} else {
+		var orMatcher = make([]q.Matcher, len(categories))
+		for i, cat := range categories {
+			orMatcher[i] = q.Eq("Category", cat)
+		}
+		catMatcher = q.Or(orMatcher...)
+	}
+
+	query := db.Select(
 		q.And(
-			q.Gt("Date", accountingDateStart),
+			q.Gt("Date", since),
 			q.Eq("Type", Debit),
 			q.Eq("ToBeAllocated", true),
-			q.Eq("Category", Pension),
+			catMatcher,
 		),
 	)
+
+	var transactions []Transaction
 	if err := query.Find(&transactions); err != nil {
 		return 0, err
 	}
 
-	var pension float64
+	var total float64
 	for _, idx := range transactions {
-		pension = pension + idx.Credit
+		total = total + idx.Debit
 	}
-	return pension, nil
+	return total, nil
+
 }

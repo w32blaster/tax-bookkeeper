@@ -19,14 +19,27 @@ func (t *TerminalUI) Start() {
 	t.app = tview.NewApplication()
 }
 
-func (t *TerminalUI) DrawDashboard(data DashboardData) {
+func (t *TerminalUI) DrawDashboard(data *DashboardData) {
+
+	// last 10 transactions on the left
+	infoFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	infoFlex.SetBorder(true).SetTitle(" Last transactions ").SetBorderPadding(1, 1, 1, 1)
+	infoFlex.AddItem(buildTransactionsListWidget(data.LastTransactions), 0, 1, false)
+
+	cpFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
+	cpFlex.AddItem(buildCorporationTaxReportWidget(data), 0, 1, false)
+
+	saFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	saFlex.SetBorder(true).SetTitle(" Self-Assessment ").SetBorderPadding(1, 1, 1, 1)
+	saFlex.AddItem(buildSelfAssessmentTaxReportWidget(data), 0, 1, false)
 
 	flex := tview.NewFlex().
-		AddItem(tview.NewBox().SetBorder(true).SetTitle(" Last transactions "), 0, 1, false).
+		AddItem(infoFlex, 0, 1, false).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Corporate tax "), 0, 1, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Self-Assessment "), 0, 3, false).
+				AddItem(cpFlex, 0, 1, false).
+				AddItem(saFlex, 0, 3, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" VAT "), 0, 1, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
 			0, 2, false)
@@ -34,7 +47,50 @@ func (t *TerminalUI) DrawDashboard(data DashboardData) {
 	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
 		panic(err)
 	}
+}
 
+func buildTransactionsListWidget(txs []db.Transaction) *tview.TextView {
+	var txsStrs = make([]string, len(txs))
+	for i, tx := range txs {
+		txsStrs[i] = "-" + tx.PrettyPrint()
+	}
+
+	txsStr := strings.Join(txsStrs, "\n")
+	txTextView := tview.NewTextView().SetText(txsStr).SetTextAlign(tview.AlignLeft).SetWordWrap(true)
+	// txTextView.SetBorder(true).SetBorderPadding(1, 0, 2, 1)
+	return txTextView
+}
+
+func buildCorporationTaxReportWidget(data *DashboardData) *tview.TextView {
+	var b strings.Builder
+	b.WriteString("Tax for period: \t\t\t")
+	b.WriteString(data.Period)
+	b.WriteString("\nNext payment will be: \t\t")
+	b.WriteString(data.NextPaymentDate.Format("02 January 2006"))
+	b.WriteString(fmt.Sprintf("\nEarned for current period: \t %.2f", data.EarnedAccountingPeriod))
+	b.WriteString(fmt.Sprintf("\nExpenses for current period: \t %.2f", data.ExpensesAccountingPeriod))
+	b.WriteString(fmt.Sprintf("\nPension for current period: \t %.2f", data.PensionAccountingPeriod))
+	b.WriteString("\n-----------")
+	b.WriteString(fmt.Sprintf("\nCorporate Tax so far: \t\t %.2f", data.CorporateTaxSoFar))
+
+	txTextView := tview.NewTextView().SetText(b.String()).SetTextAlign(tview.AlignLeft).SetWordWrap(true)
+	// txTextView.SetBorder(true).SetBorderPadding(1, 0, 2, 1)
+	return txTextView
+}
+
+func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.TextView {
+
+	formattedText := `
+Self-Assessment tax
+-------------------
+Since ....
+Moved out from company: %.2f
+Personal tax so far: %.2f
+`
+	txTextView := tview.NewTextView().
+		SetText(fmt.Sprintf(formattedText, data.MovedOutFromCompanyTotal, data.SelfAssessmentTaxSoFar)).
+		SetTextAlign(tview.AlignLeft).SetWordWrap(true)
+	return txTextView
 }
 
 // here we attempt to guess and prefill category dropdown list by some words in description,
