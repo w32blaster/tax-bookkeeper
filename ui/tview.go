@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"log"
@@ -42,40 +43,75 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 				AddItem(saFlex, 0, 3, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" VAT "), 0, 1, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
-			0, 2, false)
+			0, 1, false)
 
 	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
 		panic(err)
 	}
 }
 
-func buildTransactionsListWidget(txs []db.Transaction) *tview.TextView {
-	var txsStrs = make([]string, len(txs))
-	for i, tx := range txs {
-		txsStrs[i] = "-" + tx.PrettyPrint()
+func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
+
+	table := tview.NewTable().SetBorders(true)
+
+	for r := 0; r < len(txs); r++ {
+
+		// Cell 1, Date
+		table.SetCell(r, 0,
+			tview.NewTableCell(txs[r].Date.Format("2 Jan 06")).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
+
+		// Cell 2, amount
+		color := tcell.ColorWhite
+		amount := txs[r].Debit
+		if txs[r].Type == db.Credit {
+			color = tcell.ColorGreen
+			amount = txs[r].Credit
+		}
+
+		table.SetCell(r, 1,
+			tview.NewTableCell(fmt.Sprintf("£%.02f", amount)).
+				SetTextColor(color).
+				SetAlign(tview.AlignLeft))
+
+		table.SetCell(r, 2,
+			tview.NewTableCell(txs[r].Description).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
 	}
 
-	txsStr := strings.Join(txsStrs, "\n")
-	txTextView := tview.NewTextView().SetText(txsStr).SetTextAlign(tview.AlignLeft).SetWordWrap(true)
-	// txTextView.SetBorder(true).SetBorderPadding(1, 0, 2, 1)
-	return txTextView
+	return table
 }
 
-func buildCorporationTaxReportWidget(data *DashboardData) *tview.TextView {
-	var b strings.Builder
-	b.WriteString("Tax for period: \t\t\t")
-	b.WriteString(data.Period)
-	b.WriteString("\nNext payment will be: \t\t")
-	b.WriteString(data.NextPaymentDate.Format("02 January 2006"))
-	b.WriteString(fmt.Sprintf("\nEarned for current period: \t %.2f", data.EarnedAccountingPeriod))
-	b.WriteString(fmt.Sprintf("\nExpenses for current period: \t %.2f", data.ExpensesAccountingPeriod))
-	b.WriteString(fmt.Sprintf("\nPension for current period: \t %.2f", data.PensionAccountingPeriod))
-	b.WriteString("\n-----------")
-	b.WriteString(fmt.Sprintf("\nCorporate Tax so far: \t\t %.2f", data.CorporateTaxSoFar))
+func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
 
-	txTextView := tview.NewTextView().SetText(b.String()).SetTextAlign(tview.AlignLeft).SetWordWrap(true)
-	// txTextView.SetBorder(true).SetBorderPadding(1, 0, 2, 1)
-	return txTextView
+	labels := [][]string{
+		{"Tax for period: ", data.Period},
+		{"Next payment will be: ", data.NextPaymentDate.Format("02 January 2006")},
+		{"Earned for current period: ", floatToString(data.EarnedAccountingPeriod)},
+		{"Expenses for current period: ", floatToString(data.ExpensesAccountingPeriod)},
+		{"Pension for current period: ", floatToString(data.PensionAccountingPeriod)},
+		{"Corporate Tax so far: ", floatToString(data.CorporateTaxSoFar)},
+	}
+
+	table := tview.NewTable().SetBorders(false)
+	for r := 0; r < len(labels); r++ {
+
+		// Cell 1, label
+		table.SetCell(r, 0,
+			tview.NewTableCell(labels[r][0]).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
+
+		// Cell 2, amount
+		table.SetCell(r, 1,
+			tview.NewTableCell(labels[r][1]).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
+	}
+
+	return table
 }
 
 func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.TextView {
@@ -177,4 +213,8 @@ func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Trans
 	if err := t.app.SetRoot(form, true).SetFocus(form).Run(); err != nil {
 		panic(err)
 	}
+}
+
+func floatToString(inputNum float64) string {
+	return strconv.FormatFloat(inputNum, 'f', 2, 64)
 }
