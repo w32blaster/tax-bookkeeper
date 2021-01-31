@@ -32,7 +32,7 @@ func main() {
 
 	// TODO: validate date if set
 
-	d := db.Init()
+	d := db.Init("./tax-bookkeeper.db")
 	defer d.Close()
 
 	gui := ui.TerminalUI{}

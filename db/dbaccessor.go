@@ -13,10 +13,10 @@ type Database struct {
 	db *storm.DB
 }
 
-func Init() *Database {
+func Init(dbPathFile string) *Database {
 
 	// Open Storm DB
-	boltdb, err := storm.Open("./tax-bookkeeper.db", storm.Codec(msgpack.Codec), storm.BoltOptions(0600, &bbolt.Options{Timeout: 5 * time.Second}))
+	boltdb, err := storm.Open(dbPathFile, storm.Codec(msgpack.Codec), storm.BoltOptions(0600, &bbolt.Options{Timeout: 5 * time.Second}))
 	if err != nil {
 		panic(err)
 	}
@@ -142,7 +142,7 @@ func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...Trans
 		q.And(
 			q.Gt("Date", since),
 			q.Eq("Type", Debit),
-			q.Eq("ToBeAllocated", true),
+			q.Eq("ToBeAllocated", false),
 			catMatcher,
 		),
 	)
