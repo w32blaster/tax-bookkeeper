@@ -4,6 +4,7 @@ import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/tax"
+	"math"
 	"time"
 )
 
@@ -28,7 +29,7 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *Das
 	// Self-assessment
 	movedOut, _ := d.GetMovedOut(accountingDateStart /* TODO:  ????? what is a period? */)
 	selfAssessmentTax := tax.CalculateSelfAssessmentTax(movedOut, 0 /* TODO: ??? what income is??? */)
-	rate, leftBeforeThreshold := tax.HowMuchBeforeNextThreshold(movedOut)
+	rate, leftBeforeThreshold, isWarning := tax.HowMuchBeforeNextThreshold(math.Abs(movedOut))
 
 	return &DashboardData{
 
@@ -47,5 +48,6 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *Das
 		SelfAssessmentTaxSoFar:     selfAssessmentTax,
 		TaxRate:                    rate,
 		HowMuchBeforeNextThreshold: leftBeforeThreshold,
+		IsWarning:                  isWarning,
 	}
 }

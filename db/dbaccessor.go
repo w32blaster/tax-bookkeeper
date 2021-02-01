@@ -6,6 +6,7 @@ import (
 	"github.com/asdine/storm/v3/q"
 	"go.etcd.io/bbolt"
 	"log"
+	"math"
 	"time"
 )
 
@@ -156,6 +157,6 @@ func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...Trans
 	for _, idx := range transactions {
 		total = total + idx.Debit
 	}
-	return total, nil
+	return math.Abs(total), nil
 
 }

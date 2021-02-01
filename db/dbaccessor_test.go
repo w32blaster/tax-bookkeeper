@@ -94,6 +94,40 @@ func TestCalculateExpenses(t *testing.T) {
 	assert.Equal(t, 260.0, total)
 }
 
+func TestCalculateExpensesNegativeNumbers(t *testing.T) {
+
+	// create real DB
+	const dbFile = "/tmp/tax-bookkeeper-expenses-neg.db"
+	db := Init(dbFile)
+	defer func() {
+		db.Close()
+		os.Remove(dbFile)
+	}()
+
+	// Dates:
+	recently := dateOf("20-12-2019")
+
+	// Populate with data:
+	inserted, err := db.ImportTransactions([]Transaction{
+
+		// counting, because resent expenses
+		_debitTransaction(Legal, -50.0, "Ok", recently),
+		_debitTransaction(Travel, -60.0, "Ok", recently),
+		_debitTransaction(Office, -30.0, "Ok", recently),
+		_debitTransaction(EquipmentExpenses, -70.0, "Ok", recently),
+		_debitTransaction(Premises, -50.0, "Ok", recently),
+	})
+	assert.Nil(t, err)
+	assert.Equal(t, 5, inserted)
+
+	// When:
+	total, err := db.GetExpensesSince(dateOf("01-12-2019"))
+
+	// Then:
+	assert.Nil(t, err)
+	assert.Equal(t, 260.0, total) // still positive number
+}
+
 func _debitTransaction(cat TransactionCategory, debit float64, description string, txDate time.Time) Transaction {
 	return Transaction{
 		Date:          txDate,

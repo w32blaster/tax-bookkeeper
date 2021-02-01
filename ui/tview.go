@@ -89,10 +89,10 @@ func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
 	labels := [][]string{
 		{"Tax for period: ", data.Period},
 		{"Next payment will be: ", data.NextPaymentDate.Format("02 January 2006")},
-		{"Earned for current period: ", floatToString(data.EarnedAccountingPeriod)},
-		{"Expenses for current period: ", floatToString(data.ExpensesAccountingPeriod)},
-		{"Pension for current period: ", floatToString(data.PensionAccountingPeriod)},
-		{"Corporate Tax so far: ", floatToString(data.CorporateTaxSoFar)},
+		{"Earned for current period: ", "£" + floatToString(data.EarnedAccountingPeriod)},
+		{"Expenses for current period: ", "£" + floatToString(data.ExpensesAccountingPeriod)},
+		{"Pension for current period: ", "£" + floatToString(data.PensionAccountingPeriod)},
+		{"Corporate Tax so far: ", "£" + floatToString(data.CorporateTaxSoFar)},
 	}
 
 	table := tview.NewTable().SetBorders(false)
@@ -116,27 +116,34 @@ func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
 
 func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.Table {
 
+	colorWarning := "grey"
+	if data.IsWarning {
+		colorWarning = "red"
+	}
+
 	labels := [][]string{
-		{"Since: ", "....."},
-		{"Moved out from company: ", floatToString(data.MovedOutFromCompanyTotal)},
-		{"Personal tax so far: ", floatToString(data.SelfAssessmentTaxSoFar)},
-		{"Current tax rate: ", data.TaxRate.PrettyString()},
-		{"Left before the following threshold: ", floatToString(data.HowMuchBeforeNextThreshold)},
+		{"Since: ", ".....", "white"},
+		{"Moved out from company: ", "£" + floatToString(data.MovedOutFromCompanyTotal), "white"},
+		{"Personal tax so far: ", "£" + floatToString(data.SelfAssessmentTaxSoFar), "green"},
+		{"Current tax rate: ", data.TaxRate.PrettyString(), "white"},
+		{"Left before the following threshold: ", "£" + floatToString(data.HowMuchBeforeNextThreshold), colorWarning},
 	}
 
 	table := tview.NewTable().SetBorders(false)
 	for r := 0; r < len(labels); r++ {
 
+		cellColor := tcell.GetColor(labels[r][2])
+
 		// Cell 1, label
 		table.SetCell(r, 0,
 			tview.NewTableCell(labels[r][0]).
-				SetTextColor(tcell.ColorWhite).
+				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 
 		// Cell 2, amount
 		table.SetCell(r, 1,
 			tview.NewTableCell(labels[r][1]).
-				SetTextColor(tcell.ColorWhite).
+				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 	}
 

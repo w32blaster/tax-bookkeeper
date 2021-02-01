@@ -156,23 +156,25 @@ func Test_HowMuchBeforeNextThreshold(t *testing.T) {
 		income            float64
 		expectedRate      Rate
 		expectedMoneyLeft float64
+		expectedIsWarning bool
 	}{
 		// income falls within personal allowance,  how much money left before £12.500
-		{0, PersonalAllowance, 12500.00},
-		{100, PersonalAllowance, 12400.00},
-		{5000, PersonalAllowance, 7500.00},
+		{0, PersonalAllowance, 12500.00, false},
+		{100, PersonalAllowance, 12400.00, false},
+		{5000, PersonalAllowance, 7500.00, false},
+		{12000, PersonalAllowance, 500.00, true},
 
 		// income falls within the Basic Rate, how much money left before £50.000
-		{20000, BasicRate, 30000.00},
-		{30000, BasicRate, 20000.00},
-		{45000, BasicRate, 5000.00},
+		{20000, BasicRate, 30000.00, false},
+		{30000, BasicRate, 20000.00, false},
+		{45000, BasicRate, 5000.00, true},
 
 		// income falls within the Higher Rate, how much money left before £150.000
-		{70000, HigherRate, 80000.00},
-		{120000, HigherRate, 30000.00},
+		{70000, HigherRate, 80000.00, false},
+		{120000, HigherRate, 30000.00, true},
 
 		// income exceeds all limits and falls into Additional Rate
-		{170000, AdditionalRate, 0.00 /* infinity */},
+		{170000, AdditionalRate, 0.00 /* infinity */, true},
 	}
 
 	for _, tt := range tests {
@@ -181,11 +183,12 @@ func Test_HowMuchBeforeNextThreshold(t *testing.T) {
 			func(t *testing.T) {
 
 				// When:
-				rate, leftBeforeNextThreshold := HowMuchBeforeNextThreshold(tt.income)
+				rate, leftBeforeNextThreshold, isWarning := HowMuchBeforeNextThreshold(tt.income)
 
 				// Then:
 				assert.Equal(t, tt.expectedRate, rate)
 				assert.Equal(t, tt.expectedMoneyLeft, leftBeforeNextThreshold)
+				assert.Equal(t, tt.expectedIsWarning, isWarning)
 			},
 		)
 	}

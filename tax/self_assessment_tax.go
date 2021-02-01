@@ -125,19 +125,28 @@ func getNITax(profitBeforeTaxes float64) (float64, float64) {
 	return math.Round(class2), math.Round(class4)
 }
 
-// returns current rate and how much before next threshold
-func HowMuchBeforeNextThreshold(personalIncome float64) (Rate, float64) {
+// returns current rate, how much before next threshold, and is it warning (when less than 20% left) or not
+func HowMuchBeforeNextThreshold(personalIncome float64) (Rate, float64, bool) {
+	const percentToWarning = 0.2
+	left := 0.0
+	isWarning := false
 	if personalIncome < personalAllowance {
-		return PersonalAllowance, personalAllowance - personalIncome
+		left = personalAllowance - personalIncome
+		isWarning = (left / personalIncome) <= percentToWarning
+		return PersonalAllowance, left, isWarning
 	}
 
 	if personalIncome < 50000 {
-		return BasicRate, 50000 - personalIncome
+		left = 50000 - personalIncome
+		isWarning = (left / 50000) <= percentToWarning
+		return BasicRate, left, isWarning
 	}
 
 	if personalIncome < 150000 {
-		return HigherRate, 150000 - personalIncome
+		left = 150000 - personalIncome
+		isWarning = (left / 150000) <= percentToWarning
+		return HigherRate, left, isWarning
 	}
 
-	return AdditionalRate, 0
+	return AdditionalRate, 0, true
 }

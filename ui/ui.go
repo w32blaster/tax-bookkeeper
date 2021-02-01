@@ -30,6 +30,7 @@ type DashboardData struct {
 	// warning:
 	HowMuchBeforeNextThreshold float64
 	SelfAssessmentTaxSoFar     float64
+	IsWarning                  bool
 }
 
 // callback function that will be fired on the Save button clicking
