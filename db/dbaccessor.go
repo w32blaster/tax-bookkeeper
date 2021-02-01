@@ -97,7 +97,7 @@ func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error
 		q.And(
 			q.Gt("Date", accountingDateStart),
 			q.Eq("Type", Credit),
-			q.Eq("ToBeAllocated", true),
+			q.Eq("ToBeAllocated", false),
 			q.Eq("Category", Income),
 		),
 	)

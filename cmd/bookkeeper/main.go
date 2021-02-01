@@ -7,7 +7,6 @@ import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/importer"
-	"github.com/w32blaster/tax-bookkeeper/tax"
 	"github.com/w32blaster/tax-bookkeeper/ui"
 	"log"
 	"os"
@@ -55,7 +54,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dashboardData := tax.CollectDataForDashboard(d, accPeriod)
+	dashboardData := ui.CollectDataForDashboard(d, accPeriod)
 	gui.DrawDashboard(dashboardData)
 }
 

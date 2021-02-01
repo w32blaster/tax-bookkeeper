@@ -1,11 +1,36 @@
 package tax
 
-import "math"
+import (
+	"math"
+)
 
 const (
 	personalAllowance = 12500.0
 	weeksInAYear      = 52
 )
+
+type Rate int
+
+const (
+	PersonalAllowance Rate = 1 + iota
+	BasicRate
+	HigherRate
+	AdditionalRate
+)
+
+func (r Rate) PrettyString() string {
+	switch r {
+	case PersonalAllowance:
+		return "Personal Allowance (0%)"
+	case BasicRate:
+		return "Basic Rate (20%)"
+	case HigherRate:
+		return "Higher Rate (40%)"
+	case AdditionalRate:
+		return "Additional Rate (45%)"
+	}
+	return ""
+}
 
 // Tax Year is from 6 April to 5 April
 // https://www.gov.uk/income-tax-rates
@@ -98,4 +123,21 @@ func getNITax(profitBeforeTaxes float64) (float64, float64) {
 	}
 
 	return math.Round(class2), math.Round(class4)
+}
+
+// returns current rate and how much before next threshold
+func HowMuchBeforeNextThreshold(personalIncome float64) (Rate, float64) {
+	if personalIncome < personalAllowance {
+		return PersonalAllowance, personalAllowance - personalIncome
+	}
+
+	if personalIncome < 50000 {
+		return BasicRate, 50000 - personalIncome
+	}
+
+	if personalIncome < 150000 {
+		return HigherRate, 150000 - personalIncome
+	}
+
+	return AdditionalRate, 0
 }

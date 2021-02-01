@@ -1,14 +1,14 @@
-package tax
+package ui
 
 import (
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
-	"github.com/w32blaster/tax-bookkeeper/ui"
+	"github.com/w32blaster/tax-bookkeeper/tax"
 	"time"
 )
 
 // accountingDateStart is only day and month, like 01-11
-func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *ui.DashboardData {
+func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *DashboardData {
 
 	// TODO: handle errors!
 
@@ -20,19 +20,20 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *ui.
 	profit := revenue - expenses - pension
 
 	// Corporate Tax
-	corpTax := CalculateCorporateTax(profit, accountingDateStart)
+	corpTax := tax.CalculateCorporateTax(profit, accountingDateStart)
 
 	// last 10 transactions
 	lastTenTransactions, _ := d.GetAll(30)
 
 	// Self-assessment
-	movedOut, _ := d.GetMovedOut(accountingDateStart /* ????? what is a period? */)
-	selfAssesmentTax := CalculateSelfAssessmentTax(movedOut, 0 /* ??? what costs are??? */)
+	movedOut, _ := d.GetMovedOut(accountingDateStart /* TODO:  ????? what is a period? */)
+	selfAssessmentTax := tax.CalculateSelfAssessmentTax(movedOut, 0 /* TODO: ??? what income is??? */)
+	rate, leftBeforeThreshold := tax.HowMuchBeforeNextThreshold(movedOut)
 
-	return &ui.DashboardData{
+	return &DashboardData{
 
 		// Corp Tax
-		Period:                   GetFinYear(accountingDateStart),
+		Period:                   tax.GetFinYear(accountingDateStart),
 		NextPaymentDate:          time.Date(accountingDateStart.Year()+1, accountingDateStart.Month(), accountingDateStart.Day(), 0, 0, 0, 0, conf.GMT),
 		CorporateTaxSoFar:        corpTax,
 		EarnedAccountingPeriod:   revenue,
@@ -42,7 +43,9 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time) *ui.
 		LastTransactions: lastTenTransactions,
 
 		// Self-assessment
-		MovedOutFromCompanyTotal: movedOut,
-		SelfAssessmentTaxSoFar:   selfAssesmentTax,
+		MovedOutFromCompanyTotal:   movedOut,
+		SelfAssessmentTaxSoFar:     selfAssessmentTax,
+		TaxRate:                    rate,
+		HowMuchBeforeNextThreshold: leftBeforeThreshold,
 	}
 }

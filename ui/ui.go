@@ -2,16 +2,8 @@ package ui
 
 import (
 	"github.com/w32blaster/tax-bookkeeper/db"
+	"github.com/w32blaster/tax-bookkeeper/tax"
 	"time"
-)
-
-type TaxRate int
-
-const (
-	PersonalAllowance TaxRate = 1 + iota
-	BasicRate
-	HigherRate
-	AdditionalRate
 )
 
 // struct that keeps all the data for the dashboard
@@ -34,7 +26,7 @@ type DashboardData struct {
 	// Self-Assessment tax
 	MovedOutFromCompanyTotal float64
 	// Salary, dividends?
-	TaxRate TaxRate
+	TaxRate tax.Rate
 	// warning:
 	HowMuchBeforeNextThreshold float64
 	SelfAssessmentTaxSoFar     float64

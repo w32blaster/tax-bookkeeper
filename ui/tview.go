@@ -114,19 +114,33 @@ func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
 	return table
 }
 
-func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.TextView {
+func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.Table {
 
-	formattedText := `
-Self-Assessment tax
--------------------
-Since ....
-Moved out from company: %.2f
-Personal tax so far: %.2f
-`
-	txTextView := tview.NewTextView().
-		SetText(fmt.Sprintf(formattedText, data.MovedOutFromCompanyTotal, data.SelfAssessmentTaxSoFar)).
-		SetTextAlign(tview.AlignLeft).SetWordWrap(true)
-	return txTextView
+	labels := [][]string{
+		{"Since: ", "....."},
+		{"Moved out from company: ", floatToString(data.MovedOutFromCompanyTotal)},
+		{"Personal tax so far: ", floatToString(data.SelfAssessmentTaxSoFar)},
+		{"Current tax rate: ", data.TaxRate.PrettyString()},
+		{"Left before the following threshold: ", floatToString(data.HowMuchBeforeNextThreshold)},
+	}
+
+	table := tview.NewTable().SetBorders(false)
+	for r := 0; r < len(labels); r++ {
+
+		// Cell 1, label
+		table.SetCell(r, 0,
+			tview.NewTableCell(labels[r][0]).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
+
+		// Cell 2, amount
+		table.SetCell(r, 1,
+			tview.NewTableCell(labels[r][1]).
+				SetTextColor(tcell.ColorWhite).
+				SetAlign(tview.AlignLeft))
+	}
+
+	return table
 }
 
 // here we attempt to guess and prefill category dropdown list by some words in description,
