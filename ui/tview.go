@@ -29,11 +29,15 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 
 	cpFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
-	cpFlex.AddItem(buildCorporationTaxReportWidget(data), 0, 1, false)
+	cpFlex.AddItem(buildCorporationTaxReportWidget(&data.CorporateTax), 0, 1, false)
 
 	saFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	saFlex.SetBorder(true).SetTitle(" Self-Assessment ").SetBorderPadding(1, 1, 1, 1)
-	saFlex.AddItem(buildSelfAssessmentTaxReportWidget(data), 0, 1, false)
+	saFlex.AddItem(buildSelfAssessmentTaxReportWidget(&data.SelfAssessmentTax), 0, 1, false)
+
+	vatFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	vatFlex.SetBorder(true).SetTitle(" VAT ").SetBorderPadding(1, 1, 1, 1)
+	vatFlex.AddItem(buildVatReportWidget(&data.VAT), 0, 1, false)
 
 	flex := tview.NewFlex().
 		AddItem(infoFlex, 0, 1, false).
@@ -41,7 +45,7 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 			tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(cpFlex, 0, 1, false).
 				AddItem(saFlex, 0, 3, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle(" VAT "), 0, 1, false).
+				AddItem(vatFlex, 0, 1, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
 			0, 1, false)
 
@@ -84,7 +88,7 @@ func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
 	return table
 }
 
-func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
+func buildCorporationTaxReportWidget(data *CorporateTax) *tview.Table {
 
 	labels := [][]string{
 		{"Tax for period: ", data.Period},
@@ -114,7 +118,7 @@ func buildCorporationTaxReportWidget(data *DashboardData) *tview.Table {
 	return table
 }
 
-func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.Table {
+func buildSelfAssessmentTaxReportWidget(data *SelfAssessmentTax) *tview.Table {
 
 	colorWarning := "grey"
 	if data.IsWarning {
@@ -122,11 +126,41 @@ func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.Table {
 	}
 
 	labels := [][]string{
-		{"Since: ", data.Since.Format("02 January 2006"), "white"},
+		{"Since: ", ".....?", "white"},
 		{"Moved out from company: ", "£" + floatToString(data.MovedOutFromCompanyTotal), "white"},
 		{"Personal tax so far: ", "£" + floatToString(data.SelfAssessmentTaxSoFar), "green"},
 		{"Current tax rate: ", data.TaxRate.PrettyString(), "white"},
 		{"Left before the following threshold: ", "£" + floatToString(data.HowMuchBeforeNextThreshold), colorWarning},
+	}
+
+	table := tview.NewTable().SetBorders(false)
+	for r := 0; r < len(labels); r++ {
+
+		cellColor := tcell.GetColor(labels[r][2])
+
+		// Cell 1, label
+		table.SetCell(r, 0,
+			tview.NewTableCell(labels[r][0]).
+				SetTextColor(cellColor).
+				SetAlign(tview.AlignLeft))
+
+		// Cell 2, amount
+		table.SetCell(r, 1,
+			tview.NewTableCell(labels[r][1]).
+				SetTextColor(cellColor).
+				SetAlign(tview.AlignLeft))
+	}
+
+	return table
+}
+
+func buildVatReportWidget(data *VAT) *tview.Table {
+
+	labels := [][]string{
+		{"Paid VAT since: ", data.Since.Format("02 January 2006"), "white"},
+		{"VAT so far: ", "£" + floatToString(data.NextVATToBePaidSoFar), "white"},
+		{"Submit your return to: ", data.NextMonthSubmit, "white"},
+		{"Payment deadline: ", data.NextDateYouShouldPayFor.Format("02 January 2006"), "red"},
 	}
 
 	table := tview.NewTable().SetBorders(false)
