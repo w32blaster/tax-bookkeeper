@@ -17,6 +17,7 @@ import (
 )
 
 var isHelp bool
+var VATRegisteredMonth int
 var importCashPlus, accountingPeriodStartDate string
 var r = regexp.MustCompile("^[0-9]{2}-[0-9]{2}$")
 
@@ -28,6 +29,14 @@ func main() {
 			"-accounting-start=01-11 - set the accounting period date, if it doesn't match to financial year (1st of April)")
 		os.Exit(0)
 	}
+
+	if VATRegisteredMonth == 0 {
+		fmt.Println("Sorry, the -v parameter is mandatory. It is the month when your company was " +
+			"registered for VAT, for example, -v=11 (meaning November). You can login to GOV.UK and see your date here:" +
+			" https://www.tax.service.gov.uk/vat-through-software/vat-certificate . Exit")
+		os.Exit(1)
+	}
+	vatMonth := time.Month(VATRegisteredMonth)
 
 	// TODO: validate date if set
 
@@ -54,7 +63,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dashboardData := ui.CollectDataForDashboard(d, accPeriod)
+	dashboardData, err := ui.CollectDataForDashboard(d, accPeriod, vatMonth)
+	if err != nil {
+		log.Fatal("Can't build the dashboard, because: " + err.Error())
+	}
+
 	gui.DrawDashboard(dashboardData)
 }
 
@@ -75,6 +88,8 @@ func init() {
 	flag.StringVar(&importCashPlus, "import-cashplus", "", "import transactions in CSV format from Cashplus")
 	flag.StringVar(&accountingPeriodStartDate, "accounting-start", "", "If your Accounting Period start is different from financial year start,"+
 		"you can set your date with this parameter, (example 01-11 which is 1st of November)")
+	flag.IntVar(&VATRegisteredMonth, "v", 0, "month when your company was registered for VAT"+
+		" (you can find it here: https://www.tax.service.gov.uk/vat-through-software/vat-certificate)")
 }
 
 // here we find the current account date.

@@ -7,31 +7,43 @@ import (
 )
 
 // struct that keeps all the data for the dashboard
-type DashboardData struct {
+type (
+	CorporateTax struct {
+		Period                   string
+		NextPaymentDate          time.Time
+		CorporateTaxSoFar        float64
+		EarnedAccountingPeriod   float64
+		ExpensesAccountingPeriod float64
+		PensionAccountingPeriod  float64
+	}
 
-	// Last 10 transactions
-	LastTransactions []db.Transaction
+	// TODO: Salary, dividends?
+	SelfAssessmentTax struct {
+		MovedOutFromCompanyTotal float64
+		SelfAssessmentTaxSoFar   float64
+		TaxRate                  tax.Rate
+		// warning:
+		HowMuchBeforeNextThreshold float64
 
-	// Corporate tax
-	Period                   string
-	NextPaymentDate          time.Time
-	CorporateTaxSoFar        float64
-	EarnedAccountingPeriod   float64
-	ExpensesAccountingPeriod float64
-	PensionAccountingPeriod  float64
+		IsWarning bool
+	}
 
-	// VAT
-	NextVATToBePaidSoFar float64
+	VAT struct {
+		NextVATToBePaidSoFar    float64
+		NextDateYouShouldPayFor time.Time
+		NextMonthSubmit         string
+	}
 
-	// Self-Assessment tax
-	MovedOutFromCompanyTotal float64
-	// Salary, dividends?
-	TaxRate tax.Rate
-	// warning:
-	HowMuchBeforeNextThreshold float64
-	SelfAssessmentTaxSoFar     float64
-	IsWarning                  bool
-}
+	DashboardData struct {
+
+		// Last 10 transactions
+		LastTransactions []db.Transaction
+
+		CorporateTax
+		SelfAssessmentTax
+		VAT
+	}
+)
 
 // callback function that will be fired on the Save button clicking
 type FuncAllocateTransactions func(txToAllocate map[int]db.TransactionCategory) error
