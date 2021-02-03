@@ -29,6 +29,7 @@ type (
 	}
 
 	VAT struct {
+		Since                   time.Time
 		NextVATToBePaidSoFar    float64
 		NextDateYouShouldPayFor time.Time
 		NextMonthSubmit         string

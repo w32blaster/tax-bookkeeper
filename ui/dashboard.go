@@ -26,7 +26,10 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 		return nil, err
 	}
 
-	vat := collectSummaryVAT(corporateTax.ExpensesAccountingPeriod, vatMonth)
+	vat, err := collectSummaryVAT(d, vatMonth)
+	if err != nil {
+		return nil, err
+	}
 
 	return &DashboardData{
 		CorporateTax:      corporateTax,
@@ -81,11 +84,20 @@ func collectSummaryCorporateTax(d *db.Database, accountingDateStart time.Time) (
 	}, nil
 }
 
-func collectSummaryVAT(expenses float64, vatMonth time.Month) VAT {
-	submitMonth, payDeadline := tax.GetNextReturnDate(vatMonth, time.Now().In(conf.GMT))
+func collectSummaryVAT(d *db.Database, vatMonth time.Month) (VAT, error) {
+	now := time.Now().In(conf.GMT)
+	submitMonth, payDeadline := tax.GetNextReturnDate(vatMonth, now)
+
+	beginningVATPeriod := tax.GetBeginningOfPreviousPeriod(submitMonth, now.Year())
+	vatExpenses, err := d.GetExpensesSince(beginningVATPeriod)
+	if err != nil {
+		return VAT{}, err
+	}
+
 	return VAT{
-		NextVATToBePaidSoFar:    expenses * 0.2,
+		Since:                   beginningVATPeriod,
+		NextVATToBePaidSoFar:    vatExpenses * 0.2,
 		NextDateYouShouldPayFor: payDeadline,
 		NextMonthSubmit:         submitMonth.String(),
-	}
+	}, nil
 }

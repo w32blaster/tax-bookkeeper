@@ -122,7 +122,7 @@ func buildSelfAssessmentTaxReportWidget(data *DashboardData) *tview.Table {
 	}
 
 	labels := [][]string{
-		{"Since: ", ".....", "white"},
+		{"Since: ", data.Since.Format("02 January 2006"), "white"},
 		{"Moved out from company: ", "£" + floatToString(data.MovedOutFromCompanyTotal), "white"},
 		{"Personal tax so far: ", "£" + floatToString(data.SelfAssessmentTaxSoFar), "green"},
 		{"Current tax rate: ", data.TaxRate.PrettyString(), "white"},

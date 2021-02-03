@@ -38,3 +38,13 @@ func getClosestSubmittingMonth(vat time.Month, current time.Month) time.Month {
 		}
 	}
 }
+
+// safely subtracts 3 months, considering the year beginning
+func GetBeginningOfPreviousPeriod(closestMonth time.Month, year int) time.Time {
+	month := closestMonth - 2
+	if month < 1 {
+		return time.Date(year-1, 12-(-month), 1, 0, 0, 0, 0, conf.GMT)
+	}
+
+	return time.Date(year, month, 1, 0, 0, 0, 0, conf.GMT)
+}

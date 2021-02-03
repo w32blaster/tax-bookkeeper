@@ -103,6 +103,9 @@ func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error
 		),
 	)
 	if err := query.Find(&transactions); err != nil {
+		if err == storm.ErrNotFound {
+			return 0, nil
+		}
 		return 0, err
 	}
 
@@ -150,6 +153,9 @@ func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...Trans
 
 	var transactions []Transaction
 	if err := query.Find(&transactions); err != nil {
+		if err == storm.ErrNotFound {
+			return 0, nil
+		}
 		return 0, err
 	}
 

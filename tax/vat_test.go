@@ -108,3 +108,41 @@ func TestFindClosestSubmittingMonth(t *testing.T) {
 		)
 	}
 }
+
+func TestGetBeginningOfPreviousPeriod(t *testing.T) {
+	var tests = []struct {
+		month    time.Month
+		year     int
+		expected time.Time
+	}{
+		// returns previous year!
+		{time.January, 2020, dateOf("01-11-2019")},
+		{time.February, 2020, dateOf("01-12-2019")},
+
+		// the same year
+		{time.March, 2020, dateOf("01-01-2020")},
+		{time.April, 2020, dateOf("01-02-2020")},
+		{time.May, 2020, dateOf("01-03-2020")},
+		{time.June, 2020, dateOf("01-04-2020")},
+		{time.July, 2020, dateOf("01-05-2020")},
+		{time.August, 2020, dateOf("01-06-2020")},
+		{time.September, 2020, dateOf("01-07-2020")},
+		{time.October, 2020, dateOf("01-08-2020")},
+		{time.November, 2020, dateOf("01-09-2020")},
+		{time.December, 2020, dateOf("01-10-2020")},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Expected getting %s when the end of period is  %s",
+			tt.expected.String(), tt.month.String()),
+			func(t *testing.T) {
+
+				// When:
+				beginning := GetBeginningOfPreviousPeriod(tt.month, tt.year)
+
+				// Then:
+				assert.Equal(t, tt.expected.Format("02 Jan 06 "), beginning.Format("02 Jan 06 "))
+			},
+		)
+	}
+}
