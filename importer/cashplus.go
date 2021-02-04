@@ -3,8 +3,6 @@ package importer
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/w32blaster/tax-bookkeeper/conf"
-	"github.com/w32blaster/tax-bookkeeper/db"
 	"io"
 	"log"
 	"os"
@@ -12,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/w32blaster/tax-bookkeeper/conf"
+	"github.com/w32blaster/tax-bookkeeper/db"
 )
 
 // https://cashplus.com/
@@ -50,14 +51,13 @@ func (c CashPlus) ReadAndParseFiles(path string) []db.Transaction {
 func listFilesInDir(root string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
+		if !info.IsDir() && strings.HasSuffix(path, ".csv") {
 			files = append(files, path)
 		}
 		return nil
 	})
 	return files, err
 }
-
 
 func readAndImportSingleFile(filePath string) []db.Transaction {
 

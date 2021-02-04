@@ -4,7 +4,7 @@ test:
 	go test -race -short ./...
 
 build: test
-	CGO_ENABLED=0 GOOS=linux go build \
+	CGO_ENABLED=0 go build \
         -a -installsuffix cgo \
         -ldflags "-s -w" \
         -o tax-bookkeeper \

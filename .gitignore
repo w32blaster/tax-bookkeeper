@@ -2,3 +2,4 @@ tax-bookkeeper.db
 statements
 /tax-bookkeeper
 .idea
+.DS_Store

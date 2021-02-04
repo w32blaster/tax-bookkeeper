@@ -4,16 +4,17 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/w32blaster/tax-bookkeeper/conf"
-	"github.com/w32blaster/tax-bookkeeper/db"
-	"github.com/w32blaster/tax-bookkeeper/importer"
-	"github.com/w32blaster/tax-bookkeeper/ui"
 	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/w32blaster/tax-bookkeeper/conf"
+	"github.com/w32blaster/tax-bookkeeper/db"
+	"github.com/w32blaster/tax-bookkeeper/importer"
+	"github.com/w32blaster/tax-bookkeeper/ui"
 )
 
 var isHelp bool
@@ -30,7 +31,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if VATRegisteredMonth == 0 {
+	if VATRegisteredMonth == 0 && importCashPlus == "" {
 		fmt.Println("Sorry, the -v parameter is mandatory. It is the month when your company was " +
 			"registered for VAT, for example, -v=11 (meaning November). You can login to GOV.UK and see your date here:" +
 			" https://www.tax.service.gov.uk/vat-through-software/vat-certificate . Exit")
