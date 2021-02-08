@@ -110,7 +110,7 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 	}
 
 	labels := [][]string{
-		{"Tax for period: ", data.Period},
+		{"Tax for period: ", data.Period, color},
 		{"Payment Date: ", data.NextPaymentDate.Format("02 January 2006"), color},
 		{"Earned: ", "£" + floatToString(data.EarnedAccountingPeriod), color},
 		{"Expenses: ", "£" + floatToString(data.ExpensesAccountingPeriod), color},
@@ -125,12 +125,16 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 
 	table := tview.NewTable().SetBorders(false)
 
+	var uLine tcell.Style
+	uLine = uLine.Underline(true)
+
 	// Cell 0, header
 	table.SetCell(0, 0,
 		tview.NewTableCell(cpHeader).
-			SetTextColor(tcell.ColorBlack).
-			SetBackgroundColor(tcell.ColorWhite).
+			SetStyle(uLine).
+			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft))
+
 	table.SetCell(0, 1,
 		tview.NewTableCell("").
 			SetAlign(tview.AlignLeft))
