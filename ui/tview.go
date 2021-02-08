@@ -2,12 +2,13 @@ package ui
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
-	"github.com/w32blaster/tax-bookkeeper/db"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+	"github.com/w32blaster/tax-bookkeeper/db"
 )
 
 type TerminalUI struct {
@@ -27,9 +28,17 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	infoFlex.SetBorder(true).SetTitle(" Last transactions ").SetBorderPadding(1, 1, 1, 1)
 	infoFlex.AddItem(buildTransactionsListWidget(data.LastTransactions), 0, 1, false)
 
+	// Corporate tax
+	prevCorpTax := buildCorporationTaxReportWidget(&data.PreviousPeriod, false)
+	currCorpTax := buildCorporationTaxReportWidget(&data.CurrentPeriod, true)
+
 	cpFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
-	cpFlex.AddItem(buildCorporationTaxReportWidget(&data.CorporateTax), 0, 1, false)
+	cpFlex.AddItem(
+		tview.NewFlex().
+			AddItem(prevCorpTax, 0, 1, false).
+			AddItem(currCorpTax, 0, 1, false),
+		0, 1, false)
 
 	saFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	saFlex.SetBorder(true).SetTitle(" Self-Assessment ").SetBorderPadding(1, 1, 1, 1)
@@ -88,30 +97,58 @@ func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
 	return table
 }
 
-func buildCorporationTaxReportWidget(data *CorporateTax) *tview.Table {
+func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.Table {
+
+	color := "grey"
+	if isFuture {
+		color = "white"
+	}
+
+	cpLabel := "Corporate Tax: "
+	if isFuture {
+		cpLabel = "Corporate Tax so far (estimated): "
+	}
 
 	labels := [][]string{
 		{"Tax for period: ", data.Period},
-		{"Next payment will be: ", data.NextPaymentDate.Format("02 January 2006")},
-		{"Earned for current period: ", "£" + floatToString(data.EarnedAccountingPeriod)},
-		{"Expenses for current period: ", "£" + floatToString(data.ExpensesAccountingPeriod)},
-		{"Pension for current period: ", "£" + floatToString(data.PensionAccountingPeriod)},
-		{"Corporate Tax so far: ", "£" + floatToString(data.CorporateTaxSoFar)},
+		{"Payment Date: ", data.NextPaymentDate.Format("02 January 2006"), color},
+		{"Earned: ", "£" + floatToString(data.EarnedAccountingPeriod), color},
+		{"Expenses: ", "£" + floatToString(data.ExpensesAccountingPeriod), color},
+		{"Pension: ", "£" + floatToString(data.PensionAccountingPeriod), color},
+		{cpLabel, "£" + floatToString(data.CorporateTaxSoFar), "green"},
+	}
+
+	cpHeader := "Previous Year Corporate tax"
+	if isFuture {
+		cpHeader = "Current year Corporate tax (not finished) "
 	}
 
 	table := tview.NewTable().SetBorders(false)
+
+	// Cell 0, header
+	table.SetCell(0, 0,
+		tview.NewTableCell(cpHeader).
+			SetTextColor(tcell.ColorBlack).
+			SetBackgroundColor(tcell.ColorWhite).
+			SetAlign(tview.AlignLeft))
+	table.SetCell(0, 1,
+		tview.NewTableCell("").
+			SetAlign(tview.AlignLeft))
+
 	for r := 0; r < len(labels); r++ {
 
+		cellColor := tcell.GetColor(labels[r][2])
+
 		// Cell 1, label
-		table.SetCell(r, 0,
+		table.SetCell(r+1, 0,
 			tview.NewTableCell(labels[r][0]).
-				SetTextColor(tcell.ColorWhite).
+				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 
 		// Cell 2, amount
-		table.SetCell(r, 1,
+		table.SetCell(r+1, 1,
 			tview.NewTableCell(labels[r][1]).
-				SetTextColor(tcell.ColorWhite).
+				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 	}
 

@@ -1,18 +1,23 @@
 package ui
 
 import (
+	"math"
+	"time"
+
 	"github.com/w32blaster/tax-bookkeeper/conf"
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/tax"
-	"math"
-	"time"
 )
 
-// accountingDateStart is only day and month, like 01-11
+// CollectDataForDashboard accountingDateStart is only day and month, like 01-11
 func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatMonth time.Month) (*DashboardData, error) {
 
 	// get the profit for the current accounting period since accountingDateStart until now
-	corporateTax, err := collectSummaryCorporateTax(d, accountingDateStart)
+	currentCorporateTax, err := collectSummaryCorporateTax(d, accountingDateStart)
+	if err != nil {
+		return nil, err
+	}
+	previousCorporateTax, err := collectSummaryCorporateTax(d, accountingDateStart.AddDate(-1, 0, 0))
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +37,8 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 	}
 
 	return &DashboardData{
-		CorporateTax:      corporateTax,
+		PreviousPeriod:    previousCorporateTax,
+		CurrentPeriod:     currentCorporateTax,
 		LastTransactions:  lastTenTransactions,
 		SelfAssessmentTax: selfAssessmentTax,
 		VAT:               vat,
@@ -74,9 +80,14 @@ func collectSummaryCorporateTax(d *db.Database, accountingDateStart time.Time) (
 	// Corporate Tax
 	corpTax := tax.CalculateCorporateTax(profit, accountingDateStart)
 
+	// You must pay your Corporation Tax 9 months and 1 day after the end
+	// of your accounting period
+	// https://www.gov.uk/pay-corporation-tax
+	paymentDate := accountingDateStart.AddDate(0, 9, 1)
+
 	return CorporateTax{
 		Period:                   tax.GetFinYear(accountingDateStart),
-		NextPaymentDate:          time.Date(accountingDateStart.Year()+1, accountingDateStart.Month(), accountingDateStart.Day(), 0, 0, 0, 0, conf.GMT),
+		NextPaymentDate:          paymentDate,
 		CorporateTaxSoFar:        corpTax,
 		EarnedAccountingPeriod:   revenue,
 		ExpensesAccountingPeriod: expenses,

@@ -1,9 +1,10 @@
 package ui
 
 import (
+	"time"
+
 	"github.com/w32blaster/tax-bookkeeper/db"
 	"github.com/w32blaster/tax-bookkeeper/tax"
-	"time"
 )
 
 // struct that keeps all the data for the dashboard
@@ -40,7 +41,9 @@ type (
 		// Last 10 transactions
 		LastTransactions []db.Transaction
 
-		CorporateTax
+		PreviousPeriod CorporateTax
+		CurrentPeriod  CorporateTax
+
 		SelfAssessmentTax
 		VAT
 	}
