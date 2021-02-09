@@ -38,8 +38,8 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 			"period https://www.gov.uk/pay-corporation-tax")
 
 	// Self-assessment
-	currentSA := buildSelfAssessmentTaxReportWidget(&data.CurrentSelfAssessmentPeriod)
-	previousSA := buildSelfAssessmentTaxReportWidget(&data.PreviousSelfAssessmentPeriod)
+	previousSA := buildSelfAssessmentTaxReportWidget(&data.PreviousSelfAssessmentPeriod, false)
+	currentSA := buildSelfAssessmentTaxReportWidget(&data.CurrentSelfAssessmentPeriod, true)
 
 	saFlex := buildTwoColumnsWithDescription(" Self-Assessment ", previousSA, currentSA,
 		"Self assessment is between 6th of April and 5th April next year and the payment day is 31st of January")
@@ -107,7 +107,7 @@ func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview
 
 	// wrapping final flex
 	cpFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
+	cpFlex.SetBorder(true).SetTitle(title).SetBorderPadding(1, 1, 1, 1)
 	cpFlex.
 		AddItem(tableCorporateTaxes, 0, 1, false).
 		AddItem(tview.NewTextView().SetText(description), 0, 1, false)
@@ -175,7 +175,17 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 	return table
 }
 
-func buildSelfAssessmentTaxReportWidget(data *SelfAssessmentTax) *tview.Table {
+func buildSelfAssessmentTaxReportWidget(data *SelfAssessmentTax, isFuture bool) *tview.Table {
+
+	color := "grey"
+	if isFuture {
+		color = "white"
+	}
+
+	cpLabel := "Self-Assessment tax: "
+	if isFuture {
+		cpLabel = "Self-Assessment tax so far: "
+	}
 
 	colorWarning := "grey"
 	if data.IsWarning {
@@ -183,26 +193,44 @@ func buildSelfAssessmentTaxReportWidget(data *SelfAssessmentTax) *tview.Table {
 	}
 
 	labels := [][]string{
-		{"Since: ", ".....?", "white"},
-		{"Moved out from company: ", "£" + floatToString(data.MovedOutFromCompanyTotal), "white"},
-		{"Personal tax so far: ", "£" + floatToString(data.SelfAssessmentTaxSoFar), "green"},
-		{"Current tax rate: ", data.TaxRate.PrettyString(), "white"},
+		{"Start dat: ", data.StartingDate.Format("02 January 2006"), color},
+		{"End day: ", data.EndingDate.Format("02 January 2006"), color},
+		{"Payment day: ", data.NextPaymentDate.Format("02 January 2006"), "red"},
+		{"Moved out from company: ", "£" + floatToString(data.MovedOutFromCompanyTotal), color},
+		{cpLabel, "£" + floatToString(data.SelfAssessmentTaxSoFar), "green"},
+		{"Current tax rate: ", data.TaxRate.PrettyString(), color},
 		{"Left before the following threshold: ", "£" + floatToString(data.HowMuchBeforeNextThreshold), colorWarning},
 	}
 
 	table := tview.NewTable().SetBorders(false)
+
+	var uLine tcell.Style
+	uLine = uLine.Underline(true)
+
+	cpHeader := "Previous Year Self-Assessment tax"
+	if isFuture {
+		cpHeader = "Current year Self-Assessment (not finished) "
+	}
+
+	// Cell 0, header
+	table.SetCell(0, 0,
+		tview.NewTableCell(cpHeader).
+			SetStyle(uLine).
+			SetTextColor(tcell.ColorWhite).
+			SetAlign(tview.AlignLeft))
+
 	for r := 0; r < len(labels); r++ {
 
 		cellColor := tcell.GetColor(labels[r][2])
 
 		// Cell 1, label
-		table.SetCell(r, 0,
+		table.SetCell(r+1, 0,
 			tview.NewTableCell(labels[r][0]).
 				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 
 		// Cell 2, amount
-		table.SetCell(r, 1,
+		table.SetCell(r+1, 1,
 			tview.NewTableCell(labels[r][1]).
 				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
