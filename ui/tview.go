@@ -32,17 +32,17 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	prevCorpTax := buildCorporationTaxReportWidget(&data.PreviousPeriod, false)
 	currCorpTax := buildCorporationTaxReportWidget(&data.CurrentPeriod, true)
 
-	cpFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
-	cpFlex.AddItem(
-		tview.NewFlex().
-			AddItem(prevCorpTax, 0, 1, false).
-			AddItem(currCorpTax, 0, 1, false),
-		0, 1, false)
+	cpFlex := buildTwoColumnsWithDescription(" Corporate tax ", prevCorpTax, currCorpTax,
+		"You must pay your Corporation "+
+			"Tax 9 months and 1 day after the end  of your accounting "+
+			"period https://www.gov.uk/pay-corporation-tax")
 
-	saFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	saFlex.SetBorder(true).SetTitle(" Self-Assessment ").SetBorderPadding(1, 1, 1, 1)
-	saFlex.AddItem(buildSelfAssessmentTaxReportWidget(&data.SelfAssessmentTax), 0, 1, false)
+	// Self-assessment
+	currentSA := buildSelfAssessmentTaxReportWidget(&data.CurrentSelfAssessmentPeriod)
+	previousSA := buildSelfAssessmentTaxReportWidget(&data.PreviousSelfAssessmentPeriod)
+
+	saFlex := buildTwoColumnsWithDescription(" Self-Assessment ", previousSA, currentSA,
+		"Self assessment is between 6th of April and 5th April next year and the payment day is 31st of January")
 
 	vatFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	vatFlex.SetBorder(true).SetTitle(" VAT ").SetBorderPadding(1, 1, 1, 1)
@@ -52,8 +52,8 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 		AddItem(infoFlex, 0, 1, false).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(cpFlex, 0, 1, false).
-				AddItem(saFlex, 0, 3, false).
+				AddItem(cpFlex, 0, 2, false).
+				AddItem(saFlex, 0, 2, false).
 				AddItem(vatFlex, 0, 1, false).
 				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
 			0, 1, false)
@@ -93,8 +93,26 @@ func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
 				SetTextColor(tcell.ColorWhite).
 				SetAlign(tview.AlignLeft))
 	}
-
 	return table
+}
+
+func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview.Table, description string) *tview.Flex {
+
+	// two columns
+	tableCorporateTaxes := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(
+		tview.NewFlex().
+			AddItem(prevTable, 0, 1, false).
+			AddItem(currentTable, 0, 1, false),
+		0, 1, false)
+
+	// wrapping final flex
+	cpFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	cpFlex.SetBorder(true).SetTitle(" Corporate tax ").SetBorderPadding(1, 1, 1, 1)
+	cpFlex.
+		AddItem(tableCorporateTaxes, 0, 1, false).
+		AddItem(tview.NewTextView().SetText(description), 0, 1, false)
+
+	return cpFlex
 }
 
 func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.Table {
@@ -111,7 +129,9 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 
 	labels := [][]string{
 		{"Tax for period: ", data.Period, color},
-		{"Payment Date: ", data.NextPaymentDate.Format("02 January 2006"), color},
+		{"Starting Date: ", data.StartingDate.Format("02 January 2006"), color},
+		{"End Date: ", data.EndingDate.Format("02 January 2006"), color},
+		{"Payment Date: ", data.NextPaymentDate.Format("02 January 2006"), "red"},
 		{"Earned: ", "£" + floatToString(data.EarnedAccountingPeriod), color},
 		{"Expenses: ", "£" + floatToString(data.ExpensesAccountingPeriod), color},
 		{"Pension: ", "£" + floatToString(data.PensionAccountingPeriod), color},
@@ -133,10 +153,6 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 		tview.NewTableCell(cpHeader).
 			SetStyle(uLine).
 			SetTextColor(tcell.ColorWhite).
-			SetAlign(tview.AlignLeft))
-
-	table.SetCell(0, 1,
-		tview.NewTableCell("").
 			SetAlign(tview.AlignLeft))
 
 	for r := 0; r < len(labels); r++ {

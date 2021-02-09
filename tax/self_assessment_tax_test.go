@@ -193,3 +193,45 @@ func Test_HowMuchBeforeNextThreshold(t *testing.T) {
 		)
 	}
 }
+
+func Test_GetTaxYearDatesNowIsAfterApril(t *testing.T) {
+
+	// Given:
+	now := dateOf("01-10-2019") // after the 6th of April, we are at the beginning of tax year
+
+	// When:
+	start, end, paymentDay := GetTaxYearDates(now)
+
+	// Then:
+	assert.Equal(t, dateOf("06-04-2019"), start)
+	assert.Equal(t, dateOf("05-04-2020"), end)
+	assert.Equal(t, dateOf("31-01-2021"), paymentDay)
+}
+
+func Test_GetTaxYearDatesNowIsBeforeApril(t *testing.T) {
+
+	// Given:
+	now := dateOf("01-01-2019") // before the 6th of April, we are at the end of tax year
+
+	// When:
+	start, end, paymentDay := GetTaxYearDates(now)
+
+	// Then:
+	assert.Equal(t, dateOf("06-04-2018"), start)
+	assert.Equal(t, dateOf("05-04-2019"), end)
+	assert.Equal(t, dateOf("31-01-2020"), paymentDay)
+}
+
+func Test_GetTaxYearDatesNowIsStart(t *testing.T) {
+
+	// Given:
+	now := dateOf("06-04-2019") // exactly 6th of April, the first day of tax year
+
+	// When:
+	start, end, paymentDay := GetTaxYearDates(now)
+
+	// Then:
+	assert.Equal(t, dateOf("06-04-2019"), start)
+	assert.Equal(t, dateOf("05-04-2020"), end)
+	assert.Equal(t, dateOf("31-01-2021"), paymentDay)
+}

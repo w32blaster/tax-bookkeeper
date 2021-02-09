@@ -1,7 +1,9 @@
 package tax
 
 import (
+	"github.com/w32blaster/tax-bookkeeper/conf"
 	"math"
+	"time"
 )
 
 const (
@@ -30,6 +32,24 @@ func (r Rate) PrettyString() string {
 		return "Additional Rate (45%)"
 	}
 	return ""
+}
+
+// Returns start of tax year (6 April), end date (5 April) and payment date (31 January) with correct years
+func GetTaxYearDates(now time.Time) (time.Time, time.Time, time.Time) {
+	endAtThisYear := time.Date(now.Year(), time.April, 5, 0, 0, 0, 0, conf.GMT)
+	if now.After(endAtThisYear) {
+		return _generateTaxYearDatesForGivenYear(now.Year())
+	}
+
+	return _generateTaxYearDatesForGivenYear(now.Year() - 1)
+}
+
+// personal tax year is always starts at 6th of April, ends at 5th of April and payment date is 31th of January,
+// only year is different
+func _generateTaxYearDatesForGivenYear(year int) (time.Time, time.Time, time.Time) {
+	return time.Date(year, time.April, 6, 0, 0, 0, 0, conf.GMT),
+		time.Date(year+1, time.April, 5, 0, 0, 0, 0, conf.GMT),
+		time.Date(year+2, time.January, 31, 0, 0, 0, 0, conf.GMT)
 }
 
 // Tax Year is from 6 April to 5 April

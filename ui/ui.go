@@ -11,6 +11,8 @@ import (
 type (
 	CorporateTax struct {
 		Period                   string
+		StartingDate             time.Time
+		EndingDate               time.Time
 		NextPaymentDate          time.Time
 		CorporateTaxSoFar        float64
 		EarnedAccountingPeriod   float64
@@ -20,6 +22,9 @@ type (
 
 	// TODO: Salary, dividends?
 	SelfAssessmentTax struct {
+		StartingDate             time.Time
+		EndingDate               time.Time
+		NextPaymentDate          time.Time
 		MovedOutFromCompanyTotal float64
 		SelfAssessmentTaxSoFar   float64
 		TaxRate                  tax.Rate
@@ -44,7 +49,9 @@ type (
 		PreviousPeriod CorporateTax
 		CurrentPeriod  CorporateTax
 
-		SelfAssessmentTax
+		PreviousSelfAssessmentPeriod SelfAssessmentTax
+		CurrentSelfAssessmentPeriod  SelfAssessmentTax
+
 		VAT
 	}
 )

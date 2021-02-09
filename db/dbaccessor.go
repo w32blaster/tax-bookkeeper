@@ -91,12 +91,13 @@ func (d Database) ImportTransactions(transactions []Transaction) (int, error) {
 	return len(transactions), tx.Commit()
 }
 
-func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error) {
+func (d Database) GetRevenueSince(accountingDateStart time.Time, accountingDateEnd time.Time) (float64, error) {
 
 	var transactions []Transaction
 	query := d.db.Select(
 		q.And(
 			q.Gt("Date", accountingDateStart),
+			q.Lt("Date", accountingDateEnd),
 			q.Eq("Type", Credit),
 			q.Eq("ToBeAllocated", false),
 			q.Eq("Category", Income),
@@ -116,19 +117,19 @@ func (d Database) GetRevenueSince(accountingDateStart time.Time) (float64, error
 	return revenue, nil
 }
 
-func (d Database) GetExpensesSince(accountingDateStart time.Time) (float64, error) {
-	return _calculateExpensesByType(d.db, accountingDateStart, Legal, Travel, Office, EquipmentExpenses, Premises, FixedAssetPurchase)
+func (d Database) GetExpensesSince(accountingDateStart time.Time, accountingDateEnd time.Time) (float64, error) {
+	return _calculateExpensesByType(d.db, accountingDateStart, accountingDateEnd, Legal, Travel, Office, EquipmentExpenses, Premises, FixedAssetPurchase)
 }
 
-func (d Database) GetPensionSince(accountingDateStart time.Time) (float64, error) {
-	return _calculateExpensesByType(d.db, accountingDateStart, Pension)
+func (d Database) GetPensionSince(accountingDateStart time.Time, accountingDateEnd time.Time) (float64, error) {
+	return _calculateExpensesByType(d.db, accountingDateStart, accountingDateEnd, Pension)
 }
 
-func (d Database) GetMovedOut(since time.Time) (float64, error) {
-	return _calculateExpensesByType(d.db, since, Personal)
+func (d Database) GetMovedOut(since time.Time, until time.Time) (float64, error) {
+	return _calculateExpensesByType(d.db, since, until, Personal)
 }
 
-func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...TransactionCategory) (float64, error) {
+func _calculateExpensesByType(db *storm.DB, since time.Time, until time.Time, categories ...TransactionCategory) (float64, error) {
 
 	// prepare the query
 	var catMatcher q.Matcher
@@ -145,6 +146,7 @@ func _calculateExpensesByType(db *storm.DB, since time.Time, categories ...Trans
 	query := db.Select(
 		q.And(
 			q.Gt("Date", since),
+			q.Lt("Date", until),
 			q.Eq("Type", Debit),
 			q.Eq("ToBeAllocated", false),
 			catMatcher,
