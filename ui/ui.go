@@ -36,6 +36,7 @@ type (
 
 	VAT struct {
 		Since                   time.Time
+		Until                   time.Time
 		NextVATToBePaidSoFar    float64
 		NextDateYouShouldPayFor time.Time
 		NextMonthSubmit         string
@@ -44,15 +45,13 @@ type (
 	DashboardData struct {
 
 		// Last 10 transactions
-		LastTransactions []db.Transaction
-
-		PreviousPeriod CorporateTax
-		CurrentPeriod  CorporateTax
-
+		LastTransactions             []db.Transaction
+		PreviousPeriod               CorporateTax
+		CurrentPeriod                CorporateTax
 		PreviousSelfAssessmentPeriod SelfAssessmentTax
 		CurrentSelfAssessmentPeriod  SelfAssessmentTax
-
-		VAT
+		PreviousVAT                  VAT
+		CurrentVAT                   VAT
 	}
 )
 

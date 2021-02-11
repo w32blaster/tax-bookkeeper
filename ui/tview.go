@@ -44,9 +44,12 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	saFlex := buildTwoColumnsWithDescription(" Self-Assessment ", previousSA, currentSA,
 		"Self assessment is between 6th of April and 5th April next year and the payment day is 31st of January")
 
-	vatFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	vatFlex.SetBorder(true).SetTitle(" VAT ").SetBorderPadding(1, 1, 1, 1)
-	vatFlex.AddItem(buildVatReportWidget(&data.VAT), 0, 1, false)
+	// VAT
+	previousVatTable := buildVatReportWidget(&data.PreviousVAT, false)
+	currentVatTable := buildVatReportWidget(&data.CurrentVAT, true)
+
+	vatFlex := buildTwoColumnsWithDescription(" VAT ", previousVatTable, currentVatTable,
+		"Quarterly VAT return dates are due for submission 1 month and 7 days after the of a VAT quarter")
 
 	flex := tview.NewFlex().
 		AddItem(infoFlex, 0, 1, false).
@@ -54,8 +57,8 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 			tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(cpFlex, 0, 2, false).
 				AddItem(saFlex, 0, 2, false).
-				AddItem(vatFlex, 0, 1, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false),
+				AddItem(vatFlex, 0, 2, false).
+				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 2, false),
 			0, 1, false)
 
 	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
@@ -239,28 +242,57 @@ func buildSelfAssessmentTaxReportWidget(data *SelfAssessmentTax, isFuture bool) 
 	return table
 }
 
-func buildVatReportWidget(data *VAT) *tview.Table {
+func buildVatReportWidget(data *VAT, isFuture bool) *tview.Table {
+
+	color := "grey"
+	if isFuture {
+		color = "white"
+	}
+
+	cpLabel := "VAT tax: "
+	submitBy := "Submitted return by: "
+	if isFuture {
+		cpLabel = "VAT tax so far: "
+		submitBy = "Submit your return by:"
+	}
 
 	labels := [][]string{
-		{"Paid VAT since: ", data.Since.Format("02 January 2006"), "white"},
-		{"VAT so far: ", "£" + floatToString(data.NextVATToBePaidSoFar), "white"},
-		{"Submit your return to: ", data.NextMonthSubmit, "white"},
+		{"VAT since: ", data.Since.Format("02 January 2006"), color},
+		{"VAT until: ", data.Until.Format("02 January 2006"), color},
+		{submitBy, data.NextMonthSubmit, color},
+		{cpLabel, "£" + floatToString(data.NextVATToBePaidSoFar), color},
 		{"Payment deadline: ", data.NextDateYouShouldPayFor.Format("02 January 2006"), "red"},
 	}
 
 	table := tview.NewTable().SetBorders(false)
+
+	var uLine tcell.Style
+	uLine = uLine.Underline(true)
+
+	cpHeader := "Previous 3 months VAT tax"
+	if isFuture {
+		cpHeader = "Current VAT (not finished) "
+	}
+
+	// Cell 0, header
+	table.SetCell(0, 0,
+		tview.NewTableCell(cpHeader).
+			SetStyle(uLine).
+			SetTextColor(tcell.ColorWhite).
+			SetAlign(tview.AlignLeft))
+
 	for r := 0; r < len(labels); r++ {
 
 		cellColor := tcell.GetColor(labels[r][2])
 
 		// Cell 1, label
-		table.SetCell(r, 0,
+		table.SetCell(r+1, 0,
 			tview.NewTableCell(labels[r][0]).
 				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
 
 		// Cell 2, amount
-		table.SetCell(r, 1,
+		table.SetCell(r+1, 1,
 			tview.NewTableCell(labels[r][1]).
 				SetTextColor(cellColor).
 				SetAlign(tview.AlignLeft))
