@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -371,6 +372,10 @@ func getInitialOptionByDescription(tx db.Transaction) int {
 }
 
 func (t *TerminalUI) BeginDialogToAllocateTransactions(unallocatedTxs []db.Transaction, fnAllocate FuncAllocateTransactions) {
+
+	sort.Slice(unallocatedTxs, func(i, j int) bool {
+		return unallocatedTxs[i].Date.After(unallocatedTxs[j].Date)
+	})
 
 	form := tview.NewForm()
 
