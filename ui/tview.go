@@ -23,6 +23,16 @@ func (t *TerminalUI) Start() {
 
 func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 
+	isDataProvided := len(data.LastTransactions) > 0
+	if !isDataProvided {
+		renderRootElementToApl(
+			label("  Latest Transactions "),
+			label("  Corporation tax "),
+			label("  Self assessment tax "),
+			label("  VAT "), t)
+		return
+	}
+
 	// last 10 transactions on the left
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	infoFlex.SetBorder(true).SetTitle(" Last transactions ").SetBorderPadding(1, 1, 1, 1)
@@ -51,6 +61,17 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	vatFlex := buildTwoColumnsWithDescription(" VAT ", previousVatTable, currentVatTable,
 		"Quarterly VAT return dates are due for submission 1 month and 7 days after the of a VAT quarter")
 
+	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, t)
+}
+
+func label(header string) *tview.Flex {
+	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.SetBorder(true).SetTitle(header).SetBorderPadding(1, 1, 1, 1)
+	flex.AddItem(tview.NewTextView().SetTextColor(tcell.ColorRed).SetText("No data"), 0, 1, false)
+	return flex
+}
+
+func renderRootElementToApl(infoFlex tview.Primitive, cpFlex tview.Primitive, saFlex tview.Primitive, vatFlex tview.Primitive, t *TerminalUI) {
 	flex := tview.NewFlex().
 		AddItem(infoFlex, 0, 1, false).
 		AddItem(
@@ -69,6 +90,14 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
 
 	table := tview.NewTable().SetBorders(true)
+
+	if len(txs) == 0 {
+		table.SetCell(0, 0,
+			tview.NewTableCell("No data").
+				SetTextColor(tcell.ColorRed).
+				SetAlign(tview.AlignCenter))
+		return table
+	}
 
 	for r := 0; r < len(txs); r++ {
 
@@ -120,6 +149,8 @@ func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview
 
 func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.Table {
 
+	table := tview.NewTable().SetBorders(false)
+
 	color := "grey"
 	if isFuture {
 		color = "white"
@@ -145,8 +176,6 @@ func buildCorporationTaxReportWidget(data *CorporateTax, isFuture bool) *tview.T
 	if isFuture {
 		cpHeader = "Current year Corporate tax (not finished) "
 	}
-
-	table := tview.NewTable().SetBorders(false)
 
 	var uLine tcell.Style
 	uLine = uLine.Underline(true)
