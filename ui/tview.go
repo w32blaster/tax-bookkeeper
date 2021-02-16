@@ -62,6 +62,8 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	vatFlex := buildTwoColumnsWithDescription(" VAT ", previousVatTable, currentVatTable,
 		"Quarterly VAT return dates are due for submission 1 month and 7 days after the of a VAT quarter")
 
+	// RENDER TABLE FOR LOANS:
+
 	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, t)
 }
 
@@ -74,14 +76,14 @@ func label(header string) *tview.Flex {
 
 func renderRootElementToApl(infoFlex tview.Primitive, cpFlex tview.Primitive, saFlex tview.Primitive, vatFlex tview.Primitive, t *TerminalUI) {
 	flex := tview.NewFlex().
-		AddItem(infoFlex, 0, 1, false).
+		AddItem(infoFlex, 0, 2, false).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(cpFlex, 0, 2, false).
 				AddItem(saFlex, 0, 2, false).
-				AddItem(vatFlex, 0, 2, false).
-				AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 2, false),
-			0, 1, false)
+				AddItem(vatFlex, 0, 2, false),
+			0, 3, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false)
 
 	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
 		panic(err)

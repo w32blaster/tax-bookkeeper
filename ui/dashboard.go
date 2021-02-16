@@ -2,6 +2,7 @@ package ui
 
 import (
 	"math"
+	"sort"
 	"time"
 
 	"github.com/w32blaster/tax-bookkeeper/conf"
@@ -53,6 +54,11 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 		return nil, err
 	}
 
+	loans, err := collectSummaryDirectorLoans(d, accountingDateStart)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DashboardData{
 		PreviousPeriod:   previousCorporateTax,
 		CurrentPeriod:    currentCorporateTax,
@@ -63,7 +69,50 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 
 		PreviousVAT: previousVAT,
 		CurrentVAT:  currentVAT,
+
+		Loans: loans,
 	}, nil
+}
+
+func collectSummaryDirectorLoans(d *db.Database, accountingDateStart time.Time) (DirectorLoans, error) {
+	transactions, err := d.GetTransactionsByCategories(db.Loan, db.LoansReturn)
+	if err != nil {
+		return DirectorLoans{}, err
+	}
+
+	if len(transactions) == 0 {
+		return DirectorLoans{}, nil
+	}
+
+	// A director’s loan must be repaid within nine
+	// months and one day of the company’s year-end, or you will face a heavy tax penalty.
+	return DirectorLoans{
+		Transactions:       transactions,
+		LeftForActiveLoan:  getActiveLoan(transactions),
+		LoanMustBeReturnBy: accountingDateStart.AddDate(1, 9, 1),
+	}, nil
+}
+
+func getActiveLoan(tx []db.Transaction) float64 {
+
+	if len(tx) == 0 {
+		return 0.0
+	}
+
+	sort.Slice(tx, func(i, j int) bool {
+		return tx[i].Date.Before(tx[j].Date)
+	})
+
+	var accumulator float64
+	for _, t := range tx {
+		if t.Category == db.Loan {
+			accumulator = t.Credit
+		} else {
+			accumulator = accumulator - t.Debit
+		}
+	}
+
+	return accumulator
 }
 
 func collectSummarySelfAssessmentTax(d *db.Database, now time.Time) (SelfAssessmentTax, error) {

@@ -44,6 +44,33 @@ func (d Database) GetAll(skipTo int) ([]Transaction, error) {
 	return transactions, err
 }
 
+func (d Database) GetTransactionsByCategories(categories ...TransactionCategory) ([]Transaction, error) {
+
+	// prepare the query
+	var catMatcher q.Matcher
+	if len(categories) == 1 {
+		catMatcher = q.Eq("Category", categories[0])
+	} else {
+		var orMatcher = make([]q.Matcher, len(categories))
+		for i, cat := range categories {
+			orMatcher[i] = q.Eq("Category", cat)
+		}
+		catMatcher = q.Or(orMatcher...)
+	}
+
+	query := d.db.Select(catMatcher).OrderBy("Date")
+
+	var transactions []Transaction
+	if err := query.Find(&transactions); err != nil {
+		if err == storm.ErrNotFound {
+			return []Transaction{}, nil
+		}
+		return []Transaction{}, err
+	}
+
+	return transactions, nil
+}
+
 func (d Database) AllocateTransactions(cats map[int]TransactionCategory) error {
 	tx, err := d.db.Begin(true)
 	if err != nil {

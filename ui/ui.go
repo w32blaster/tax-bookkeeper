@@ -42,6 +42,12 @@ type (
 		NextMonthSubmit         string
 	}
 
+	DirectorLoans struct {
+		Transactions       []db.Transaction
+		LeftForActiveLoan  float64
+		LoanMustBeReturnBy time.Time
+	}
+
 	DashboardData struct {
 
 		// Last 10 transactions
@@ -52,6 +58,7 @@ type (
 		CurrentSelfAssessmentPeriod  SelfAssessmentTax
 		PreviousVAT                  VAT
 		CurrentVAT                   VAT
+		Loans                        DirectorLoans
 	}
 )
 
