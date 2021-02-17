@@ -2,14 +2,13 @@ package ui
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+	"github.com/w32blaster/tax-bookkeeper/db"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
-	"github.com/w32blaster/tax-bookkeeper/db"
 )
 
 type TerminalUI struct {
@@ -30,7 +29,9 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 			label("  Latest Transactions "),
 			label("  Corporation tax "),
 			label("  Self assessment tax "),
-			label("  VAT "), t)
+			label("  VAT "),
+			label("  Loans "),
+			t)
 		return
 	}
 
@@ -62,9 +63,10 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	vatFlex := buildTwoColumnsWithDescription(" VAT ", previousVatTable, currentVatTable,
 		"Quarterly VAT return dates are due for submission 1 month and 7 days after the of a VAT quarter")
 
-	// RENDER TABLE FOR LOANS:
+	// Director loans
+	loanFlex := renderLoans(data.Loans)
 
-	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, t)
+	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loanFlex, t)
 }
 
 func label(header string) *tview.Flex {
@@ -74,7 +76,61 @@ func label(header string) *tview.Flex {
 	return flex
 }
 
-func renderRootElementToApl(infoFlex tview.Primitive, cpFlex tview.Primitive, saFlex tview.Primitive, vatFlex tview.Primitive, t *TerminalUI) {
+func renderLoans(loans DirectorLoans) *tview.Flex {
+	cpFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	cpFlex.SetBorder(true).SetTitle(" Director's Loans ").SetBorderPadding(1, 1, 1, 1)
+
+	table := buildLoanTable(loans.Transactions)
+	cpFlex.AddItem(table, 0, 1, false)
+
+	if loans.LeftForActiveLoan != 0.0 {
+		cpFlex.AddItem(
+			tview.NewTextView().
+				SetText("Repay by: "+loans.LoanMustBeReturnBy.Format("2 Jan 2006")).
+				SetTextColor(tcell.ColorRed), 0, 1, false)
+	}
+
+	return cpFlex
+}
+
+func buildLoanTable(tx []db.Transaction) *tview.Table {
+	table := tview.NewTable().SetBorders(true)
+	for i, t := range tx {
+
+		color := tcell.ColorWhite
+		if t.Type == db.Debit {
+			color = tcell.ColorGrey
+		}
+
+		table.SetCell(i, 0,
+			tview.NewTableCell(t.Date.Format("2 Jan 06")).
+				SetTextColor(color).
+				SetAlign(tview.AlignLeft))
+
+		var amount string
+		var label string
+		if t.Type == db.Credit {
+			amount = fmt.Sprintf("£%.02f", t.Credit)
+			label = "Loan return"
+		} else {
+			amount = fmt.Sprintf("£%.02f", t.Debit)
+			label = "Loan take away"
+		}
+
+		table.SetCell(i, 1,
+			tview.NewTableCell(amount).
+				SetTextColor(color).
+				SetAlign(tview.AlignLeft))
+
+		table.SetCell(i, 2,
+			tview.NewTableCell(label).
+				SetTextColor(color).
+				SetAlign(tview.AlignLeft))
+	}
+	return table
+}
+
+func renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loansFlex tview.Primitive, t *TerminalUI) {
 	flex := tview.NewFlex().
 		AddItem(infoFlex, 0, 2, false).
 		AddItem(
@@ -83,7 +139,7 @@ func renderRootElementToApl(infoFlex tview.Primitive, cpFlex tview.Primitive, sa
 				AddItem(saFlex, 0, 2, false).
 				AddItem(vatFlex, 0, 2, false),
 			0, 3, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle(" Loans "), 0, 1, false)
+		AddItem(loansFlex, 0, 1, false)
 
 	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
 		panic(err)
@@ -134,7 +190,7 @@ func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
 func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview.Table, description string) *tview.Flex {
 
 	// two columns
-	tableCorporateTaxes := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(
+	twoColumns := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(
 		tview.NewFlex().
 			AddItem(prevTable, 0, 1, false).
 			AddItem(currentTable, 0, 1, false),
@@ -144,7 +200,7 @@ func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview
 	cpFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	cpFlex.SetBorder(true).SetTitle(title).SetBorderPadding(1, 1, 1, 1)
 	cpFlex.
-		AddItem(tableCorporateTaxes, 0, 1, false).
+		AddItem(twoColumns, 0, 1, false).
 		AddItem(tview.NewTextView().SetText(description), 0, 1, false)
 
 	return cpFlex

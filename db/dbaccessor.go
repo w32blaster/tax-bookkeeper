@@ -33,13 +33,13 @@ func (d Database) Close() {
 	d.db.Close()
 }
 
-func (d Database) GetAll(skipTo int) ([]Transaction, error) {
+func (d Database) GetAll(limit int) ([]Transaction, error) {
 	var transactions []Transaction
 	var err error
-	if skipTo == 0 {
-		err = d.db.All(&transactions)
+	if limit == 0 {
+		err = d.db.AllByIndex("Date", &transactions, storm.Reverse())
 	} else {
-		err = d.db.All(&transactions, storm.Limit(skipTo))
+		err = d.db.AllByIndex("Date", &transactions, storm.Reverse(), storm.Limit(limit))
 	}
 	return transactions, err
 }

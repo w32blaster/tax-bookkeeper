@@ -84,6 +84,10 @@ func collectSummaryDirectorLoans(d *db.Database, accountingDateStart time.Time) 
 		return DirectorLoans{}, nil
 	}
 
+	sort.Slice(transactions, func(i, j int) bool {
+		return transactions[i].Date.Before(transactions[j].Date)
+	})
+
 	// A director’s loan must be repaid within nine
 	// months and one day of the company’s year-end, or you will face a heavy tax penalty.
 	return DirectorLoans{
@@ -99,14 +103,10 @@ func getActiveLoan(tx []db.Transaction) float64 {
 		return 0.0
 	}
 
-	sort.Slice(tx, func(i, j int) bool {
-		return tx[i].Date.Before(tx[j].Date)
-	})
-
 	var accumulator float64
 	for _, t := range tx {
-		if t.Category == db.Loan {
-			accumulator = t.Credit
+		if t.Type == db.Credit {
+			accumulator = accumulator - t.Credit
 		} else {
 			accumulator = accumulator - t.Debit
 		}
