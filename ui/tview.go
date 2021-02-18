@@ -84,10 +84,16 @@ func renderLoans(loans DirectorLoans) *tview.Flex {
 	cpFlex.AddItem(table, 0, 1, false)
 
 	if loans.LeftForActiveLoan != 0.0 {
+
+		lbl := fmt.Sprintf("NB!\nRepay the mount £%0.2f\nby %s",
+			-loans.LeftForActiveLoan,
+			loans.LoanMustBeReturnBy.Format("2 Jan 2006"))
+
 		cpFlex.AddItem(
 			tview.NewTextView().
-				SetText("Repay by: "+loans.LoanMustBeReturnBy.Format("2 Jan 2006")).
+				SetText(lbl).
 				SetTextColor(tcell.ColorRed), 0, 1, false)
+
 	}
 
 	return cpFlex

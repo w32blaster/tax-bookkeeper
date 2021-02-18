@@ -103,12 +103,16 @@ func getActiveLoan(tx []db.Transaction) float64 {
 		return 0.0
 	}
 
+	sort.Slice(tx, func(i, j int) bool {
+		return tx[i].Date.Before(tx[j].Date)
+	})
+
 	var accumulator float64
 	for _, t := range tx {
-		if t.Type == db.Credit {
-			accumulator = accumulator - t.Credit
+		if t.Category == db.Loan {
+			accumulator = t.Debit
 		} else {
-			accumulator = accumulator - t.Debit
+			accumulator = accumulator - t.Credit
 		}
 	}
 
