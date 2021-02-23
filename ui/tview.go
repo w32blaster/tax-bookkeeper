@@ -23,7 +23,9 @@ func (t *TerminalUI) Start() {
 
 func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 
-	isDataProvided := len(data.LastTransactions) > 0
+	transactions := data.GetTransactions(30, 0)
+
+	isDataProvided := len(transactions) > 0
 	if !isDataProvided {
 		renderRootElementToApl(
 			label("  Latest Transactions "),
@@ -31,6 +33,7 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 			label("  Self assessment tax "),
 			label("  VAT "),
 			label("  Loans "),
+			nil,
 			t)
 		return
 	}
@@ -38,7 +41,10 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	// last 10 transactions on the left
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	infoFlex.SetBorder(true).SetTitle(" Last transactions ").SetBorderPadding(1, 1, 1, 1)
-	infoFlex.AddItem(buildTransactionsListWidget(data.LastTransactions), 0, 1, false)
+
+	bt := BuildTxTable(t.app, data.GetTransactions)
+	transactionsTable := bt.Draw()
+	infoFlex.AddItem(transactionsTable, 0, 1, false)
 
 	// Corporate tax
 	prevCorpTax := buildCorporationTaxReportWidget(&data.PreviousPeriod, false)
@@ -66,7 +72,7 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	// Director loans
 	loanFlex := renderLoans(data.Loans)
 
-	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loanFlex, t)
+	renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loanFlex, transactionsTable, t)
 }
 
 func label(header string) *tview.Flex {
@@ -136,9 +142,9 @@ func buildLoanTable(tx []db.Transaction) *tview.Table {
 	return table
 }
 
-func renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loansFlex tview.Primitive, t *TerminalUI) {
+func renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loansFlex, focusable tview.Primitive, t *TerminalUI) {
 	flex := tview.NewFlex().
-		AddItem(infoFlex, 0, 2, false).
+		AddItem(infoFlex, 0, 2, true).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
 				AddItem(cpFlex, 0, 2, false).
@@ -147,50 +153,9 @@ func renderRootElementToApl(infoFlex, cpFlex, saFlex, vatFlex, loansFlex tview.P
 			0, 3, false).
 		AddItem(loansFlex, 0, 1, false)
 
-	if err := t.app.SetRoot(flex, true).SetFocus(flex).Run(); err != nil {
+	if err := t.app.SetRoot(flex, true).EnableMouse(true).SetFocus(focusable).Run(); err != nil {
 		panic(err)
 	}
-}
-
-func buildTransactionsListWidget(txs []db.Transaction) *tview.Table {
-
-	table := tview.NewTable().SetBorders(true)
-
-	if len(txs) == 0 {
-		table.SetCell(0, 0,
-			tview.NewTableCell("No data").
-				SetTextColor(tcell.ColorRed).
-				SetAlign(tview.AlignCenter))
-		return table
-	}
-
-	for r := 0; r < len(txs); r++ {
-
-		// Cell 1, Date
-		table.SetCell(r, 0,
-			tview.NewTableCell(txs[r].Date.Format("2 Jan 06")).
-				SetTextColor(tcell.ColorWhite).
-				SetAlign(tview.AlignLeft))
-
-		// Cell 2, amount
-		color := tcell.ColorWhite
-		amount := txs[r].Debit
-		if txs[r].Type == db.Credit {
-			color = tcell.ColorGreen
-			amount = txs[r].Credit
-		}
-
-		table.SetCell(r, 1,
-			tview.NewTableCell(fmt.Sprintf("£%.02f", amount)).
-				SetTextColor(color).
-				SetAlign(tview.AlignLeft))
-
-		table.SetCell(r, 2,
-			tview.NewTableCell(txs[r].Description).
-				SetTextColor(tcell.ColorWhite).
-				SetAlign(tview.AlignLeft))
-	}
-	return table
 }
 
 func buildTwoColumnsWithDescription(title string, prevTable, currentTable *tview.Table, description string) *tview.Flex {

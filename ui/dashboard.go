@@ -13,14 +13,6 @@ import (
 // CollectDataForDashboard accountingDateStart is only day and month, like 01-11
 func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatMonth time.Month) (*DashboardData, error) {
 
-	// last 10 transactions
-	lastTenTransactions, _ := d.GetAll(30)
-
-	if len(lastTenTransactions) == 0 {
-		// no data at all; doesn't make any sense to calculate the rest
-		return &DashboardData{}, nil
-	}
-
 	now := time.Now().In(conf.GMT)
 
 	// get the profit for the current accounting period since accountingDateStart until now
@@ -60,9 +52,13 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 	}
 
 	return &DashboardData{
-		PreviousPeriod:   previousCorporateTax,
-		CurrentPeriod:    currentCorporateTax,
-		LastTransactions: lastTenTransactions,
+		GetTransactions: func(limit, page int) []db.Transaction {
+			txs, _ := d.GetAll(limit, page)
+			return txs
+		},
+
+		PreviousPeriod: previousCorporateTax,
+		CurrentPeriod:  currentCorporateTax,
 
 		PreviousSelfAssessmentPeriod: previousSelfAssessmentTax,
 		CurrentSelfAssessmentPeriod:  currentSelfAssessmentTax,

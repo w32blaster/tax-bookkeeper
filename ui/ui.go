@@ -48,10 +48,12 @@ type (
 		LoanMustBeReturnBy time.Time
 	}
 
+	FnLoadTransactions func(limit, page int) []db.Transaction
+
 	DashboardData struct {
 
 		// Last 10 transactions
-		LastTransactions             []db.Transaction
+		GetTransactions              FnLoadTransactions
 		PreviousPeriod               CorporateTax
 		CurrentPeriod                CorporateTax
 		PreviousSelfAssessmentPeriod SelfAssessmentTax
