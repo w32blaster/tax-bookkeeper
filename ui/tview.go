@@ -23,9 +23,7 @@ func (t *TerminalUI) Start() {
 
 func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 
-	transactions := data.GetTransactions(30, 0)
-
-	isDataProvided := len(transactions) > 0
+	isDataProvided := data.TotalTransactionsCnt > 0
 	if !isDataProvided {
 		renderRootElementToApl(
 			label("  Latest Transactions "),
@@ -42,7 +40,7 @@ func (t *TerminalUI) DrawDashboard(data *DashboardData) {
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	infoFlex.SetBorder(true).SetTitle(" Last transactions ").SetBorderPadding(1, 1, 1, 1)
 
-	bt := BuildTxTable(t.app, data.GetTransactions)
+	bt := BuildTxTable(t.app, data.TotalTransactionsCnt, data.GetTransactions)
 	transactionsTable := bt.Draw()
 	infoFlex.AddItem(transactionsTable, 0, 1, false)
 

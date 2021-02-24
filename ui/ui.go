@@ -51,9 +51,8 @@ type (
 	FnLoadTransactions func(limit, page int) []db.Transaction
 
 	DashboardData struct {
-
-		// Last 10 transactions
 		GetTransactions              FnLoadTransactions
+		TotalTransactionsCnt         int
 		PreviousPeriod               CorporateTax
 		CurrentPeriod                CorporateTax
 		PreviousSelfAssessmentPeriod SelfAssessmentTax

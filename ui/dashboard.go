@@ -51,7 +51,13 @@ func CollectDataForDashboard(d *db.Database, accountingDateStart time.Time, vatM
 		return nil, err
 	}
 
+	cnt, err := d.GetTransactionsCount()
+	if err != nil {
+		return nil, err
+	}
+
 	return &DashboardData{
+		TotalTransactionsCnt: cnt,
 		GetTransactions: func(limit, page int) []db.Transaction {
 			txs, _ := d.GetAll(limit, page)
 			return txs

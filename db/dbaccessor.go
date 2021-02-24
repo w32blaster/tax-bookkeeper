@@ -44,6 +44,10 @@ func (d Database) GetAll(limit, page int) ([]Transaction, error) {
 	return transactions, err
 }
 
+func (d Database) GetTransactionsCount() (int, error) {
+	return d.db.Count(&Transaction{})
+}
+
 func (d Database) GetTransactionsByCategories(categories ...TransactionCategory) ([]Transaction, error) {
 
 	// prepare the query
